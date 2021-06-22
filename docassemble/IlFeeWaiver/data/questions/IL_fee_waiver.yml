@@ -34,7 +34,7 @@ code: |
       "generated on": "2021-06-22",
       "title": "Application for Fee Waiver",
       "short title": "Fee Waiver",
-      "description": "* You will need to know your income and expenses information for the past 12 months. You also need to know the value of your belongings, including any real estate. * If you are filling this form out on behalf of a minor or incompetent adult, you will need that person’s information. * If you  get  public  benefits,  you  may  want  to  bring  current  proof   of   eligibility   and   a benefits   statement   from   the   agency providing the benefit when you file your forms. * If  you  don’t  get  public  benefits,  you  may  want  to  bring  documents  showing  your  income,  value  of  belongings  (including  real  estate)  and  expense  information  when  you  file your forms.",
+      "description": """* You will need to know your income and expenses information for the past 12 months. You also need to know the value of your belongings, including any real estate.\n* If you are filling this form out on behalf of a minor or incompetent adult, you will need that person’s information.\n* If you  get  public  benefits,  you  may  want  to  bring  current  proof   of   eligibility   and   a benefits   statement   from   the   agency providing the benefit when you file your forms.\n* If  you  don’t  get  public  benefits,  you  may  want  to  bring  documents  showing  your  income,  value  of  belongings  (including  real  estate)  and  expense  information  when  you  file your forms.""",
       "original_form": "https://www.illinoiscourts.gov/forms/approved-forms/forms-approved-forms-circuit-court/fee-waiver-civil",
       "allowed courts": [
       ],
@@ -907,137 +907,13 @@ progress: 100
 ---
 objects:
   - Post_interview_instructions: ALDocument.using(title="Instructions", filename="IL_fee_waiver_next_steps.docx", enabled=True, has_addendum=False)
-  - IL_fee_waiver_attachment: ALDocument.using(title="* You will need to know your income and expenses information for the past 12 months. You also need to know the value of your belongings, including any real estate.
-* If you are filling this form out on behalf of a minor or incompetent adult, you will need that person’s information.
-* If you  get  public  benefits,  you  may  want  to  bring  current  proof   of   eligibility   and   a benefits   statement   from   the   agency providing the benefit when you file your forms.
-* If  you  don’t  get  public  benefits,  you  may  want  to  bring  documents  showing  your  income,  value  of  belongings  (including  real  estate)  and  expense  information  when  you  file your forms.", filename="FeeWaiver_Civil_Application.pdf", enabled=True, has_addendum=False)
-  - Post_interview_instructions: ALDocument.using(title="Instructions", filename="IL_fee_waiver_next_steps.docx", enabled=True, has_addendum=False)
-  - IL_fee_waiver_attachment: ALDocument.using(title="* You will need to know your income and expenses information for the past 12 months. You also need to know the value of your belongings, including any real estate.
-* If you are filling this form out on behalf of a minor or incompetent adult, you will need that person’s information.
-* If you  get  public  benefits,  you  may  want  to  bring  current  proof   of   eligibility   and   a benefits   statement   from   the   agency providing the benefit when you file your forms.
-* If  you  don’t  get  public  benefits,  you  may  want  to  bring  documents  showing  your  income,  value  of  belongings  (including  real  estate)  and  expense  information  when  you  file your forms.", filename="FeeWaiver_Civil_Application.pdf", enabled=True, has_addendum=False)
+  - IL_fee_waiver_attachment: ALDocument.using(title="Fee Waiver Application", filename="FeeWaiver_Civil_Application.pdf", enabled=True, has_addendum=False)
 ---
 objects:
   - al_user_bundle: ALDocumentBundle.using(elements=[Post_interview_instructions,IL_fee_waiver_attachment], filename="IL_fee_waiver_package.pdf", title="All forms to download for your records")
   - al_court_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment], filename="IL_fee_waiver_package.pdf", title="All forms to download for your records")
 ---
 attachments:
-  - name: Post interview instructions
-    filename: Post-interview-instructions     
-    variable name: Post_interview_instructions[i]        
-    docx template file: IL_fee_waiver_next_steps.docx
-  - name: IL fee waiver attachment
-    filename: IL_fee_waiver     
-    variable name: IL_fee_waiver_attachment[i]        
-    skip undefined: True
-    pdf template file: FeeWaiver_Civil_Application.pdf
-    fields:
-      - "trial_court_county": ${ trial_court.address.county }
-      - "plaintiff": ${ plaintiffs[0] }
-      - "defendant": ${ defendants[0] }
-      - "docket_number": ${ docket_number }
-      - "docket_number__1": ${ docket_number }
-      - "docket_number__2": ${ docket_number }
-      - "user_name_full": ${ users[0] }
-      - "user_name_full__1": ${ users[0] }
-      - "user_birthdate": ${ users[0].birthdate.format() }
-      - "user_address_line_one": ${ users[0].address.line_one() }
-      - "user_address_city_state_zip": ${ users[0].address.line_two() }
-      - "user_signature": ${ users[0].signature_if_final(i) }
-      - "user_email": ${ users[0].email }
-      - "signer_address_city_state_zip": ${ signer[0].address.line_two() }
-      - "signer_phone_number": ${ signer[0].phone_number }
-      - "signer_address_line_one": ${ signer[0].address.line_one() }
-      - "user_dependents_adults": ${ user_dependents_adults }
-      - "user_dependents_children": ${ user_dependents_children }
-      - "user_receives_benefits_yes": ${ user_receives_benefits }
-      - "user_receives_benefits_no": ${ not user_receives_benefits }
-      - "user_pending_benefits_yes": ${ user_pending_benefits }
-      - "user_pending_benefits_no": ${ not user_pending_benefits }
-      - "user_income_ss": ${ user_income_ss }
-      - "user_income_employment": ${ user_income_employment }
-      - "user_income_employment_amount": ${ currency(user_income_employment_amount) }
-      - "user_income_ss_amount": ${ user_income_ss_amount }
-      - "user_income_child_support": ${ user_income_child_support }
-      - "user_income_unemployment": ${ user_income_unemployment }
-      - "user_income_child_support_amount": ${ currency(user_income_child_support_amount) }
-      - "user_income_unemployment_amount": ${ currency(user_income_unemployment_amount) }
-      - "user_income_pension": ${ user_income_pension }
-      - "user_income_pension_amount": ${ currency(user_income_pension_amount) }
-      - "user_income_household": ${ user_income_household }
-      - "user_income_household_amount": ${ currency(user_income_household_amount) }
-      - "user_income_other": ${ user_income_other }
-      - "user_income_amount": ${ currency(user_income_amount) }
-      - "user_income_other_kind": ${ user_income_other_kind }
-      - "user_income_none": ${ user_income_none }
-      - "user_income_total": ${ currency(user_income_total) }
-      - "user_annual_ss_amount": ${ currency(user_annual_ss_amount) }
-      - "user_annual_employment": ${ user_annual_employment }
-      - "user_annual_employment_amount": ${ currency(user_annual_employment_amount) }
-      - "user_annual_ss": ${ user_annual_ss }
-      - "user_annual_unemployment": ${ user_annual_unemployment }
-      - "user_annual_child_support": ${ user_annual_child_support }
-      - "user_annual_child_support_amount": ${ currency(user_annual_child_support_amount) }
-      - "user_annual_unemployment_amount": ${ currency(user_annual_unemployment_amount) }
-      - "user_annual_pension": ${ user_annual_pension }
-      - "user_annual_pension_amount": ${ currency(user_annual_pension_amount) }
-      - "user_annual_household": ${ user_annual_household }
-      - "user_annual_household_amount": ${ currency(user_annual_household_amount) }
-      - "user_annual_other": ${ user_annual_other }
-      - "user_annual_other_amount": ${ currency(user_annual_other_amount) }
-      - "user_annual_other_kind": ${ user_annual_other_kind }
-      - "user_annual_none": ${ user_annual_none }
-      - "user_annual_total": ${ currency(user_annual_total) }
-      - "user_expense_rent": ${ user_expense_rent }
-      - "user_expense_rent_amount": ${ currency(user_expense_rent_amount) }
-      - "user_expense_mortgage": ${ user_expense_mortgage }
-      - "user_expense_mortgage_amount": ${ currency(user_expense_mortgage_amount) }
-      - "user_expense_mortgage_other": ${ user_expense_mortgage_other }
-      - "user_expense_mortgage_other_amount": ${ currency(user_expense_mortgage_other_amount) }
-      - "user_expense_utilities": ${ user_expense_utilities }
-      - "user_expense_utilities_amount": ${ currency(user_expense_utilities_amount) }
-      - "user_expense_food": ${ user_expense_food }
-      - "user_expense_food_amount": ${ currency(user_expense_food_amount) }
-      - "user_expense_medical": ${ user_expense_medical }
-      - "user_expense_medical_amount": ${ currency(user_expense_medical_amount) }
-      - "user_expense_car": ${ user_expense_car }
-      - "user_expense_car_amount": ${ currency(user_expense_car_amount) }
-      - "user_expense_childcare": ${ user_expense_childcare }
-      - "user_expense_childcare_amount": ${ currency(user_expense_childcare_amount) }
-      - "user_expense_child_support": ${ user_expense_child_support }
-      - "user_expense_child_support_amount": ${ currency(user_expense_child_support_amount) }
-      - "user_expense_other": ${ user_expense_other }
-      - "user_expense_other_line1": ${ user_expense_other_line1 }
-      - "user_expense_other_amount": ${ currency(user_expense_other_amount) }
-      - "user_expense_other_line2": ${ user_expense_other_line2 }
-      - "user_expense_debt_other": ${ user_expense_debt_other }
-      - "user_expense_debt_other_line1": ${ user_expense_debt_other_line1 }
-      - "user_expense_debt_other_line2": ${ user_expense_debt_other_line2 }
-      - "user_expense_debt_other_amount": ${ currency(user_expense_debt_other_amount) }
-      - "user_expense_none": ${ user_expense_none }
-      - "user_expense_total": ${ currency(user_expense_total) }
-      - "user_asset_bank_account": ${ user_asset_bank_account }
-      - "user_asset_bank_account_amount": ${ currency(user_asset_bank_account_amount) }
-      - "user_asset_home": ${ user_asset_home }
-      - "user_asset_home_amount": ${ currency(user_asset_home_amount) }
-      - "user_asset_home_amount_owed": ${ currency(user_asset_home_amount_owed) }
-      - "user_asset_other_real_estate": ${ user_asset_other_real_estate }
-      - "user_asset_other_real_estate_amount": ${ currency(user_asset_other_real_estate_amount) }
-      - "user_asset_other_real_estate_amount_owed": ${ currency(user_asset_other_real_estate_amount_owed) }
-      - "user_asset_vehicle1": ${ user_asset_vehicle1 }
-      - "user_asset_vehicle1_paid_yes": ${ user_asset_vehicle1_paid }
-      - "user_asset_vehicle1_paid_no": ${ not user_asset_vehicle1_paid }
-      - "user_asset_vehicle1_amount": ${ currency(user_asset_vehicle1_amount) }
-      - "user_asset_vehicle2_paid_yes": ${ user_asset_vehicle2_paid }
-      - "user_asset_vehicle2_paid_no": ${ not user_asset_vehicle2_paid }
-      - "user_asset_vehicle2": ${ user_asset_vehicle2 }
-      - "user_asset_vehicle2_amount": ${ currency(user_asset_vehicle2_amount) }
-      - "user_asset_other_amount": ${ currency(user_asset_other_amount) }
-      - "user_asset_other": ${ user_asset_other }
-      - "user_asset_other_kind": ${ user_asset_other_kind }
-      - "user_asset_none": ${ user_asset_none }
-      - "relationship_to_minor": ${ relationship_to_minor }
-      - "user_consents_email_notice": ${ user_consents_email_notice }
   - name: Post interview instructions
     filename: Post-interview-instructions     
     variable name: Post_interview_instructions[i]        
