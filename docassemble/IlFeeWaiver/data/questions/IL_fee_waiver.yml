@@ -1,0 +1,1156 @@
+---
+include:
+  - docassemble.AssemblyLine:al_package.yml
+---
+metadata:
+  title: |
+    Application for Fee Waiver
+  short title: |
+    Fee Waiver
+  tags:
+    - BE-00-00-00-00
+    - BE-04-00-00-00
+    - ED-00-00-00-00
+    - ES-00-00-00-00
+    - FA-00-00-00-00
+    - FA-07-00-00-00
+    - HE-00-00-00-00
+    - HO-00-00-00-00
+    - IM-00-00-00-00
+    - MO-00-00-00-00
+    - RI-10-00-00-00
+---
+mandatory: True
+comment: |
+  This contains metadata that will not be overwritten if this YAML file is included in another
+  file. Each file gets its own key in the interview_metadata dictionary.
+  Most keys are not currently used at runtime, other than "allowed courts".
+code: |
+  interview_metadata
+  if not defined("interview_metadata['IL_fee_waiver']"):
+    interview_metadata.initializeObject("IL_fee_waiver")
+    interview_metadata["IL_fee_waiver"].update({
+      "al_weaver_version": "1.0.2",
+      "generated on": "2021-06-22",
+      "title": "Application for Fee Waiver",
+      "short title": "Fee Waiver",
+      "description": "* You will need to know your income and expenses information for the past 12 months. You also need to know the value of your belongings, including any real estate. * If you are filling this form out on behalf of a minor or incompetent adult, you will need that person’s information. * If you  get  public  benefits,  you  may  want  to  bring  current  proof   of   eligibility   and   a benefits   statement   from   the   agency providing the benefit when you file your forms. * If  you  don’t  get  public  benefits,  you  may  want  to  bring  documents  showing  your  income,  value  of  belongings  (including  real  estate)  and  expense  information  when  you  file your forms.",
+      "original_form": "https://www.illinoiscourts.gov/forms/approved-forms/forms-approved-forms-circuit-court/fee-waiver-civil",
+      "allowed courts": [
+      ],
+      "categories": [
+        "FA-00-00-00-00",
+        "HO-00-00-00-00",
+        "MO-00-00-00-00",
+        "RI-10-00-00-00",
+        "ES-00-00-00-00",
+        "IM-00-00-00-00",
+        "HE-00-00-00-00",
+        "FA-07-00-00-00",
+        "BE-00-00-00-00",
+        "ED-00-00-00-00",
+        "BE-04-00-00-00",
+      ],        
+      "logic block variable": "interview_order_IL_fee_waiver",
+      "attachment block variable": "IL_fee_waiver_attachment",
+      "typical role": "unknown",
+    })
+---
+code: |
+  interview_short_title = "File an Application for a Fee Waiver"
+---
+code: |
+  al_form_type = 'existing_case'
+---
+objects:
+  - signer: ALPeopleList.using(ask_number=True,target_number=1)
+  - users: ALPeopleList.using(ask_number=True,target_number=1)
+---
+sections:
+  - review_IL_fee_waiver: Review your answers
+---
+#################### Interview order #####################
+comment: |
+  Controls order and branching logic for questions specific to this form
+id: interview_order_IL_fee_waiver
+code: |
+  # Set the allowed courts for this interview
+  allowed_courts = interview_metadata["IL_fee_waiver"]["allowed courts"]
+  nav.set_section('review_IL_fee_waiver')
+  # Below sets the user_role by asking a question.
+  # You can set user_role directly instead to either 'plaintiff' or 'defendant'
+  user_ask_role
+  relationship_to_minor
+  user_receives_benefits
+  user_dependents_adults
+  set_progress(11.11)
+  user_income_ss
+  user_annual_ss_amount
+  user_expense_rent
+  set_progress(22.22)
+  user_asset_bank_account
+  user_consents_email_notice
+  trial_court.address.address
+  set_progress(33.33)
+  plaintiffs.gather()
+  defendants.gather()
+  docket_number
+  set_progress(44.44)
+  users.gather()
+  set_parts(subtitle=str(users))
+  users[0].birthdate
+  users[0].address.address
+  set_progress(55.56)
+  users[0].address.address
+  users[0].email
+  signer[0].address.address
+  set_progress(66.67)
+  signer[0].phone_number
+  signer[0].address.address
+  interview_order_IL_fee_waiver = True
+---
+###################### Main order ######################
+comment: |
+  This block includes the logic for standalone interviews.
+  Delete mandatory: True to include in another interview
+mandatory: True
+code: |
+  al_intro_screen
+  IL_fee_waiver_intro
+  interview_order_IL_fee_waiver
+  signature_date
+  # Save anonymized interview statistics (customize the saved data below)
+  store_variables_snapshot(data={'zip': users[0].address.zip})
+  IL_fee_waiver_preview_question
+  basic_questions_signature_flow
+  users[0].signature
+  IL_fee_waiver_download
+---
+comment: |
+  This question is used to introduce your interview. Please customize
+id: Application_for_Fee_Waiver
+continue button field: IL_fee_waiver_intro
+question: |
+  Application for Fee Waiver
+subquestion: |
+  * You will need to know your income and expenses information for the past 12 months. You also need to know the value of your belongings, including any real estate.
+  * If you are filling this form out on behalf of a minor or incompetent adult, you will need that person’s information.
+  * If you  get  public  benefits,  you  may  want  to  bring  current  proof   of   eligibility   and   a benefits   statement   from   the   agency providing the benefit when you file your forms.
+  * If  you  don’t  get  public  benefits,  you  may  want  to  bring  documents  showing  your  income,  value  of  belongings  (including  real  estate)  and  expense  information  when  you  file your forms.
+---
+id: Do you receive any benefits
+question: |
+  Do you receive any benefits?
+subquestion: |
+  * Supplemental Security Income (SSI) (Not Social Security)
+  * Aid to the Aged, Blind and Disabled (AABD)
+  * Temporary Assistance to Needy Families (TANF)
+  * SNAP (Food Stamps)
+  * General Assistance (GA), Transitional Assistance, or State Children and Family Assistance
+fields:
+  - "I receive one of these benefits": user_receives_benefits
+    datatype: yesno
+  - "I have applied for benefits and my application is pending": user_pending_benefits
+    datatype: yesno
+---
+id: How many dependents do you have
+question: |
+  How many dependents do you have?
+fields:
+  - "Number of adult dependents": user_dependents_adults
+    datatype: integer
+    min: 0
+  - "Number of minor dependents": user_dependents_children
+    datatype: integer
+    min: 0
+---
+id: What income did you receive in the last month
+question: |
+  What income did you receive in the last month?
+fields:
+  - "Social Security": user_income_ss
+    datatype: yesno
+  - "Employment": user_income_employment
+    datatype: yesno
+  - "Amount": user_income_employment_amount
+    datatype: currency
+    min: 0
+  - "Amount": user_income_ss_amount
+    maxlength: 10
+  - "Child support income": user_income_child_support
+    datatype: yesno
+  - "Unemployment benefits": user_income_unemployment
+    datatype: yesno
+  - "Amount": user_income_child_support_amount
+    datatype: currency
+    min: 0
+  - "Amount": user_income_unemployment_amount
+    datatype: currency
+    min: 0
+  - "Pension": user_income_pension
+    datatype: yesno
+  - "Amount": user_income_pension_amount
+    datatype: currency
+    min: 0
+  - "Income from household members": user_income_household
+    datatype: yesno
+  - "Amount": user_income_household_amount
+    datatype: currency
+    min: 0
+  - "Other income": user_income_other
+    datatype: yesno
+  - "Amount": user_income_amount
+    datatype: currency
+    min: 0
+  - "Kind of other income": user_income_other_kind
+    maxlength: 30
+  - "I do not have any income": user_income_none
+    datatype: yesno
+  - "Total monthly income": user_income_total
+    datatype: currency
+    min: 0
+---
+id: What income did you receive in the last year
+question: |
+  What income did you receive in the last year?
+fields:
+  - "Amount": user_annual_ss_amount
+    datatype: currency
+    min: 0
+  - "Annual income from work": user_annual_employment
+    datatype: yesno
+  - "Amount": user_annual_employment_amount
+    datatype: currency
+    min: 0
+  - "Annual Social Security": user_annual_ss
+    datatype: yesno
+  - "Annual unemployment": user_annual_unemployment
+    datatype: yesno
+  - "Annual child support": user_annual_child_support
+    datatype: yesno
+  - "Amount": user_annual_child_support_amount
+    datatype: currency
+    min: 0
+  - "Amount": user_annual_unemployment_amount
+    datatype: currency
+    min: 0
+  - "Pension": user_annual_pension
+    datatype: yesno
+  - "Amount": user_annual_pension_amount
+    datatype: currency
+    min: 0
+  - "Annual household": user_annual_household
+    datatype: yesno
+  - "Amount": user_annual_household_amount
+    datatype: currency
+    min: 0
+  - "Annual Other": user_annual_other
+    datatype: yesno
+  - "Amount": user_annual_other_amount
+    datatype: currency
+    min: 0
+  - "Other type": user_annual_other_kind
+    maxlength: 30
+  - "No annual income": user_annual_none
+    datatype: yesno
+  - "Total annual income": user_annual_total
+    datatype: currency
+    min: 0
+---
+id: What expenses do you have right now
+question: |
+  What expenses do you have right now?
+fields:
+  - "Rent": user_expense_rent
+    datatype: yesno
+  - "Amount": user_expense_rent_amount
+    datatype: currency
+    min: 0
+  - "Mortgage for home": user_expense_mortgage
+    datatype: yesno
+  - "Amount": user_expense_mortgage_amount
+    datatype: currency
+    min: 0
+  - "Other mortgage": user_expense_mortgage_other
+    datatype: yesno
+  - "Amount": user_expense_mortgage_other_amount
+    datatype: currency
+    min: 0
+  - "Utilities": user_expense_utilities
+    datatype: yesno
+  - "Amount": user_expense_utilities_amount
+    datatype: currency
+    min: 0
+  - "Food": user_expense_food
+    datatype: yesno
+  - "Amount": user_expense_food_amount
+    datatype: currency
+    min: 0
+  - "Medical expenses": user_expense_medical
+    datatype: yesno
+  - "Amount": user_expense_medical_amount
+    datatype: currency
+    min: 0
+  - "Car loan": user_expense_car
+    datatype: yesno
+  - "Amount": user_expense_car_amount
+    datatype: currency
+    min: 0
+  - "Childcare": user_expense_childcare
+    datatype: yesno
+  - "Amount": user_expense_childcare_amount
+    datatype: currency
+    min: 0
+  - "Child support": user_expense_child_support
+    datatype: yesno
+  - "Amount": user_expense_child_support_amount
+    datatype: currency
+    min: 0
+  - "Other expense": user_expense_other
+    datatype: yesno
+  - "Kind": user_expense_other_line1
+    maxlength: 24
+  - "Amount": user_expense_other_amount
+    datatype: currency
+    min: 0
+  - "Kind (continued)": user_expense_other_line2
+    maxlength: 53
+  - "Debt": user_expense_debt_other
+    datatype: yesno
+  - "Kind": user_expense_debt_other_line1
+    maxlength: 28
+  - "Kind (continued)": user_expense_debt_other_line2
+    maxlength: 53
+  - "Amount": user_expense_debt_other_amount
+    datatype: currency
+    min: 0
+  - "I have no expenses": user_expense_none
+    datatype: yesno
+  - "Total": user_expense_total
+    datatype: currency
+    min: 0
+---
+id: What assets do you have
+question: |
+  What assets do you have?
+fields:
+  - "Bank account or cash": user_asset_bank_account
+    datatype: yesno
+  - "Amount": user_asset_bank_account_amount
+    datatype: currency
+    min: 0
+  - "House I live in": user_asset_home
+    datatype: yesno
+  - "Value": user_asset_home_amount
+    datatype: currency
+    min: 0
+  - "Amount owed on mortgage": user_asset_home_amount_owed
+    datatype: currency
+    min: 0
+  - "Other real estate": user_asset_other_real_estate
+    datatype: yesno
+  - "Amount": user_asset_other_real_estate_amount
+    datatype: currency
+    min: 0
+  - "Amount owed on mortgage": user_asset_other_real_estate_amount_owed
+    datatype: currency
+    min: 0
+  - "First vehicle": user_asset_vehicle1
+    datatype: yesno
+  - "Vehicle is paid in full": user_asset_vehicle1_paid
+    datatype: yesno
+  - "Value": user_asset_vehicle1_amount
+    datatype: currency
+    min: 0
+  - "Vehicle is paid in full": user_asset_vehicle2_paid
+    datatype: yesno
+  - "Second vehicle": user_asset_vehicle2
+    datatype: yesno
+  - "Value": user_asset_vehicle2_amount
+    datatype: currency
+    min: 0
+  - "Amount": user_asset_other_amount
+    datatype: currency
+    min: 0
+  - "Other asset": user_asset_other
+    datatype: yesno
+  - "Kind": user_asset_other_kind
+    maxlength: 29
+  - "No assets": user_asset_none
+    datatype: yesno
+---
+id: Who is filing this fee waiver
+question: |
+  Who is filing this fee waiver?
+fields:
+  - "Relationship of signer to minor or incompetent adult": relationship_to_minor
+    maxlength: 33
+---
+id: Do you agree to get notices from the court by email
+question: |
+  Do you agree to get notices from the court by email?
+yesno: user_consents_email_notice
+---
+id: preview IL_fee_waiver
+question: |
+  Preview your form before you sign it
+subquestion: |
+  Here is a preview of the form you will sign on the next page.   
+  
+  ${ al_court_bundle.as_pdf(key='preview') }
+
+  Click the image to open it in a new tab. Click the "Make changes" button
+  to edit your answers.
+
+  ${ action_button_html(url_action('review_IL_fee_waiver'), label='Make changes', color='info') }
+  
+  Remember to come back to this window to continue and sign your form.
+continue button field: IL_fee_waiver_preview_question    
+---
+code: |
+  signature_fields = ['users[0].signature']
+---
+id: IL fee waiver review screen
+event: review_IL_fee_waiver
+question: |
+  Review your answers
+review:
+  - Edit: user_dependents_adults
+    button: |
+      **Number of adult dependents**:
+      ${ user_dependents_adults }
+  - Edit: user_dependents_children
+    button: |
+      **Number of minor dependents**:
+      ${ user_dependents_children }
+  - Edit: user_receives_benefits
+    button: |
+      **I receive one of these benefits**:
+      ${ word(yesno(user_receives_benefits)) }
+  - Edit: user_pending_benefits
+    button: |
+      **I have applied for benefits and my application is pending**:
+      ${ word(yesno(user_pending_benefits)) }
+  - Edit: user_income_ss
+    button: |
+      **Social Security**:
+      ${ word(yesno(user_income_ss)) }
+  - Edit: user_income_employment
+    button: |
+      **Employment**:
+      ${ word(yesno(user_income_employment)) }
+  - Edit: user_income_employment_amount
+    button: |
+      **Amount**:
+      ${ currency(user_income_employment_amount) }
+  - Edit: user_income_ss_amount
+    button: |
+      **Amount**:
+      ${ user_income_ss_amount }
+  - Edit: user_income_child_support
+    button: |
+      **Child support income**:
+      ${ word(yesno(user_income_child_support)) }
+  - Edit: user_income_unemployment
+    button: |
+      **Unemployment benefits**:
+      ${ word(yesno(user_income_unemployment)) }
+  - Edit: user_income_child_support_amount
+    button: |
+      **Amount**:
+      ${ currency(user_income_child_support_amount) }
+  - Edit: user_income_unemployment_amount
+    button: |
+      **Amount**:
+      ${ currency(user_income_unemployment_amount) }
+  - Edit: user_income_pension
+    button: |
+      **Pension**:
+      ${ word(yesno(user_income_pension)) }
+  - Edit: user_income_pension_amount
+    button: |
+      **Amount**:
+      ${ currency(user_income_pension_amount) }
+  - Edit: user_income_household
+    button: |
+      **Income from household members**:
+      ${ word(yesno(user_income_household)) }
+  - Edit: user_income_household_amount
+    button: |
+      **Amount**:
+      ${ currency(user_income_household_amount) }
+  - Edit: user_income_other
+    button: |
+      **Other income**:
+      ${ word(yesno(user_income_other)) }
+  - Edit: user_income_amount
+    button: |
+      **Amount**:
+      ${ currency(user_income_amount) }
+  - Edit: user_income_other_kind
+    button: |
+      **Kind of other income**:
+      ${ user_income_other_kind }
+  - Edit: user_income_none
+    button: |
+      **I do not have any income**:
+      ${ word(yesno(user_income_none)) }
+  - Edit: user_income_total
+    button: |
+      **Total monthly income**:
+      ${ currency(user_income_total) }
+  - Edit: user_annual_ss_amount
+    button: |
+      **Amount**:
+      ${ currency(user_annual_ss_amount) }
+  - Edit: user_annual_employment
+    button: |
+      **Annual income from work**:
+      ${ word(yesno(user_annual_employment)) }
+  - Edit: user_annual_employment_amount
+    button: |
+      **Amount**:
+      ${ currency(user_annual_employment_amount) }
+  - Edit: user_annual_ss
+    button: |
+      **Annual Social Security**:
+      ${ word(yesno(user_annual_ss)) }
+  - Edit: user_annual_unemployment
+    button: |
+      **Annual unemployment**:
+      ${ word(yesno(user_annual_unemployment)) }
+  - Edit: user_annual_child_support
+    button: |
+      **Annual child support**:
+      ${ word(yesno(user_annual_child_support)) }
+  - Edit: user_annual_child_support_amount
+    button: |
+      **Amount**:
+      ${ currency(user_annual_child_support_amount) }
+  - Edit: user_annual_unemployment_amount
+    button: |
+      **Amount**:
+      ${ currency(user_annual_unemployment_amount) }
+  - Edit: user_annual_pension
+    button: |
+      **Pension**:
+      ${ word(yesno(user_annual_pension)) }
+  - Edit: user_annual_pension_amount
+    button: |
+      **Amount**:
+      ${ currency(user_annual_pension_amount) }
+  - Edit: user_annual_household
+    button: |
+      **Annual household**:
+      ${ word(yesno(user_annual_household)) }
+  - Edit: user_annual_household_amount
+    button: |
+      **Amount**:
+      ${ currency(user_annual_household_amount) }
+  - Edit: user_annual_other
+    button: |
+      **Annual Other**:
+      ${ word(yesno(user_annual_other)) }
+  - Edit: user_annual_other_amount
+    button: |
+      **Amount**:
+      ${ currency(user_annual_other_amount) }
+  - Edit: user_annual_other_kind
+    button: |
+      **Other type**:
+      ${ user_annual_other_kind }
+  - Edit: user_annual_none
+    button: |
+      **No annual income**:
+      ${ word(yesno(user_annual_none)) }
+  - Edit: user_annual_total
+    button: |
+      **Total annual income**:
+      ${ currency(user_annual_total) }
+  - Edit: user_expense_rent
+    button: |
+      **Rent**:
+      ${ word(yesno(user_expense_rent)) }
+  - Edit: user_expense_rent_amount
+    button: |
+      **Amount**:
+      ${ currency(user_expense_rent_amount) }
+  - Edit: user_expense_mortgage
+    button: |
+      **Mortgage for home**:
+      ${ word(yesno(user_expense_mortgage)) }
+  - Edit: user_expense_mortgage_amount
+    button: |
+      **Amount**:
+      ${ currency(user_expense_mortgage_amount) }
+  - Edit: user_expense_mortgage_other
+    button: |
+      **Other mortgage**:
+      ${ word(yesno(user_expense_mortgage_other)) }
+  - Edit: user_expense_mortgage_other_amount
+    button: |
+      **Amount**:
+      ${ currency(user_expense_mortgage_other_amount) }
+  - Edit: user_expense_utilities
+    button: |
+      **Utilities**:
+      ${ word(yesno(user_expense_utilities)) }
+  - Edit: user_expense_utilities_amount
+    button: |
+      **Amount**:
+      ${ currency(user_expense_utilities_amount) }
+  - Edit: user_expense_food
+    button: |
+      **Food**:
+      ${ word(yesno(user_expense_food)) }
+  - Edit: user_expense_food_amount
+    button: |
+      **Amount**:
+      ${ currency(user_expense_food_amount) }
+  - Edit: user_expense_medical
+    button: |
+      **Medical expenses**:
+      ${ word(yesno(user_expense_medical)) }
+  - Edit: user_expense_medical_amount
+    button: |
+      **Amount**:
+      ${ currency(user_expense_medical_amount) }
+  - Edit: user_expense_car
+    button: |
+      **Car loan**:
+      ${ word(yesno(user_expense_car)) }
+  - Edit: user_expense_car_amount
+    button: |
+      **Amount**:
+      ${ currency(user_expense_car_amount) }
+  - Edit: user_expense_childcare
+    button: |
+      **Childcare**:
+      ${ word(yesno(user_expense_childcare)) }
+  - Edit: user_expense_childcare_amount
+    button: |
+      **Amount**:
+      ${ currency(user_expense_childcare_amount) }
+  - Edit: user_expense_child_support
+    button: |
+      **Child support**:
+      ${ word(yesno(user_expense_child_support)) }
+  - Edit: user_expense_child_support_amount
+    button: |
+      **Amount**:
+      ${ currency(user_expense_child_support_amount) }
+  - Edit: user_expense_other
+    button: |
+      **Other expense**:
+      ${ word(yesno(user_expense_other)) }
+  - Edit: user_expense_other_line1
+    button: |
+      **Kind**:
+      ${ user_expense_other_line1 }
+  - Edit: user_expense_other_amount
+    button: |
+      **Amount**:
+      ${ currency(user_expense_other_amount) }
+  - Edit: user_expense_other_line2
+    button: |
+      **Kind (continued)**:
+      ${ user_expense_other_line2 }
+  - Edit: user_expense_debt_other
+    button: |
+      **Debt**:
+      ${ word(yesno(user_expense_debt_other)) }
+  - Edit: user_expense_debt_other_line1
+    button: |
+      **Kind**:
+      ${ user_expense_debt_other_line1 }
+  - Edit: user_expense_debt_other_line2
+    button: |
+      **Kind (continued)**:
+      ${ user_expense_debt_other_line2 }
+  - Edit: user_expense_debt_other_amount
+    button: |
+      **Amount**:
+      ${ currency(user_expense_debt_other_amount) }
+  - Edit: user_expense_none
+    button: |
+      **I have no expenses**:
+      ${ word(yesno(user_expense_none)) }
+  - Edit: user_expense_total
+    button: |
+      **Total**:
+      ${ currency(user_expense_total) }
+  - Edit: user_asset_bank_account
+    button: |
+      **Bank account or cash**:
+      ${ word(yesno(user_asset_bank_account)) }
+  - Edit: user_asset_bank_account_amount
+    button: |
+      **Amount**:
+      ${ currency(user_asset_bank_account_amount) }
+  - Edit: user_asset_home
+    button: |
+      **House I live in**:
+      ${ word(yesno(user_asset_home)) }
+  - Edit: user_asset_home_amount
+    button: |
+      **Value**:
+      ${ currency(user_asset_home_amount) }
+  - Edit: user_asset_home_amount_owed
+    button: |
+      **Amount owed on mortgage**:
+      ${ currency(user_asset_home_amount_owed) }
+  - Edit: user_asset_other_real_estate
+    button: |
+      **Other real estate**:
+      ${ word(yesno(user_asset_other_real_estate)) }
+  - Edit: user_asset_other_real_estate_amount
+    button: |
+      **Amount**:
+      ${ currency(user_asset_other_real_estate_amount) }
+  - Edit: user_asset_other_real_estate_amount_owed
+    button: |
+      **Amount owed on mortgage**:
+      ${ currency(user_asset_other_real_estate_amount_owed) }
+  - Edit: user_asset_vehicle1
+    button: |
+      **First vehicle**:
+      ${ word(yesno(user_asset_vehicle1)) }
+  - Edit: user_asset_vehicle1_paid
+    button: |
+      **Vehicle is paid in full**:
+      ${ word(yesno(user_asset_vehicle1_paid)) }
+  - Edit: user_asset_vehicle1_amount
+    button: |
+      **Value**:
+      ${ currency(user_asset_vehicle1_amount) }
+  - Edit: user_asset_vehicle2_paid
+    button: |
+      **Vehicle is paid in full**:
+      ${ word(yesno(user_asset_vehicle2_paid)) }
+  - Edit: user_asset_vehicle2
+    button: |
+      **Second vehicle**:
+      ${ word(yesno(user_asset_vehicle2)) }
+  - Edit: user_asset_vehicle2_amount
+    button: |
+      **Value**:
+      ${ currency(user_asset_vehicle2_amount) }
+  - Edit: user_asset_other_amount
+    button: |
+      **Amount**:
+      ${ currency(user_asset_other_amount) }
+  - Edit: user_asset_other
+    button: |
+      **Other asset**:
+      ${ word(yesno(user_asset_other)) }
+  - Edit: user_asset_other_kind
+    button: |
+      **Kind**:
+      ${ user_asset_other_kind }
+  - Edit: user_asset_none
+    button: |
+      **No assets**:
+      ${ word(yesno(user_asset_none)) }
+  - Edit: relationship_to_minor
+    button: |
+      **Relationship of signer to minor or incompetent adult**:
+      ${ relationship_to_minor }
+  - Edit: user_consents_email_notice
+    button: |
+      **I agree to receive email**:
+      ${ word(yesno(user_consents_email_notice)) }
+  - Edit: trial_court
+    button: |
+      **trial_court**
+
+      % if defined("trial_court.address.county"):
+      * address: ${ trial_court.address.block() }
+      % endif
+  - Edit: plaintiffs.revisit
+    button: |
+      **plaintiffs**
+
+      % for item in plaintiffs:
+        * ${ item }
+      % endfor
+  - Edit: defendants.revisit
+    button: |
+      **defendants**
+
+      % for item in defendants:
+        * ${ item }
+      % endfor
+  - Edit: docket_number
+    button: |
+      **docket_number**:
+      ${ docket_number }
+  - Edit: users.revisit
+    button: |
+      **users**
+
+      % for item in users:
+        * ${ item }
+      % endfor
+  - Edit: signer.revisit
+    button: |
+      **signer**
+
+      % for item in signer:
+        * ${ item }
+      % endfor
+---
+continue button field: plaintiffs.revisit
+question: |
+  Edit plaintiffs
+subquestion: |
+  ${ plaintiffs.table }
+
+  ${ plaintiffs.add_action() }
+---
+table: plaintiffs.table
+rows: plaintiffs
+columns:
+  - name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+edit:
+  - name.first
+confirm: True
+
+---
+continue button field: defendants.revisit
+question: |
+  Edit defendants
+subquestion: |
+  ${ defendants.table }
+
+  ${ defendants.add_action() }
+---
+table: defendants.table
+rows: defendants
+columns:
+  - name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+edit:
+  - name.first
+confirm: True
+
+---
+continue button field: users.revisit
+question: |
+  Edit users
+subquestion: |
+  ${ users.table }
+
+  ${ users.add_action() }
+---
+table: users.table
+rows: users
+columns:
+  - name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+  - birthdate: |
+      row_item.birthdate if defined("row_item.birthdate") else ""
+  - address: |
+      row_item.address.block() if defined("row_item.address.address") else ""
+  - signature: |
+      row_item.signature if defined("row_item.signature") else ""
+  - email: |
+      row_item.email if defined("row_item.email") else ""
+edit:
+  - name.first
+  - birthdate
+  - address.address
+  - signature
+  - email
+confirm: True
+
+---
+continue button field: signer.revisit
+question: |
+  Edit signer
+subquestion: |
+  ${ signer.table }
+
+  ${ signer.add_action() }
+---
+table: signer.table
+rows: signer
+columns:
+  - address: |
+      row_item.address.block() if defined("row_item.address.address") else ""
+  - phone_number: |
+      row_item.phone_number if defined("row_item.phone_number") else ""
+edit:
+  - address.address
+  - phone_number
+confirm: True
+
+---
+id: download IL_fee_waiver
+event: IL_fee_waiver_download
+question: |
+  Your form is ready to download.
+subquestion: |
+  Thank you ${users}. Your form is ready to download and deliver.
+  
+  View, download and send your form below. Click the "Make changes" button to fix any mistakes.
+
+  ${ action_button_html(url_action('review_IL_fee_waiver'), label='Make changes', color='info') }
+  
+  
+  ${ al_user_bundle.download_list_html() }
+  
+
+  ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
+
+progress: 100
+---
+objects:
+  - Post_interview_instructions: ALDocument.using(title="Instructions", filename="IL_fee_waiver_next_steps.docx", enabled=True, has_addendum=False)
+  - IL_fee_waiver_attachment: ALDocument.using(title="* You will need to know your income and expenses information for the past 12 months. You also need to know the value of your belongings, including any real estate.
+* If you are filling this form out on behalf of a minor or incompetent adult, you will need that person’s information.
+* If you  get  public  benefits,  you  may  want  to  bring  current  proof   of   eligibility   and   a benefits   statement   from   the   agency providing the benefit when you file your forms.
+* If  you  don’t  get  public  benefits,  you  may  want  to  bring  documents  showing  your  income,  value  of  belongings  (including  real  estate)  and  expense  information  when  you  file your forms.", filename="FeeWaiver_Civil_Application.pdf", enabled=True, has_addendum=False)
+  - Post_interview_instructions: ALDocument.using(title="Instructions", filename="IL_fee_waiver_next_steps.docx", enabled=True, has_addendum=False)
+  - IL_fee_waiver_attachment: ALDocument.using(title="* You will need to know your income and expenses information for the past 12 months. You also need to know the value of your belongings, including any real estate.
+* If you are filling this form out on behalf of a minor or incompetent adult, you will need that person’s information.
+* If you  get  public  benefits,  you  may  want  to  bring  current  proof   of   eligibility   and   a benefits   statement   from   the   agency providing the benefit when you file your forms.
+* If  you  don’t  get  public  benefits,  you  may  want  to  bring  documents  showing  your  income,  value  of  belongings  (including  real  estate)  and  expense  information  when  you  file your forms.", filename="FeeWaiver_Civil_Application.pdf", enabled=True, has_addendum=False)
+---
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[Post_interview_instructions,IL_fee_waiver_attachment], filename="IL_fee_waiver_package.pdf", title="All forms to download for your records")
+  - al_court_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment], filename="IL_fee_waiver_package.pdf", title="All forms to download for your records")
+---
+attachments:
+  - name: Post interview instructions
+    filename: Post-interview-instructions     
+    variable name: Post_interview_instructions[i]        
+    docx template file: IL_fee_waiver_next_steps.docx
+  - name: IL fee waiver attachment
+    filename: IL_fee_waiver     
+    variable name: IL_fee_waiver_attachment[i]        
+    skip undefined: True
+    pdf template file: FeeWaiver_Civil_Application.pdf
+    fields:
+      - "trial_court_county": ${ trial_court.address.county }
+      - "plaintiff": ${ plaintiffs[0] }
+      - "defendant": ${ defendants[0] }
+      - "docket_number": ${ docket_number }
+      - "docket_number__1": ${ docket_number }
+      - "docket_number__2": ${ docket_number }
+      - "user_name_full": ${ users[0] }
+      - "user_name_full__1": ${ users[0] }
+      - "user_birthdate": ${ users[0].birthdate.format() }
+      - "user_address_line_one": ${ users[0].address.line_one() }
+      - "user_address_city_state_zip": ${ users[0].address.line_two() }
+      - "user_signature": ${ users[0].signature_if_final(i) }
+      - "user_email": ${ users[0].email }
+      - "signer_address_city_state_zip": ${ signer[0].address.line_two() }
+      - "signer_phone_number": ${ signer[0].phone_number }
+      - "signer_address_line_one": ${ signer[0].address.line_one() }
+      - "user_dependents_adults": ${ user_dependents_adults }
+      - "user_dependents_children": ${ user_dependents_children }
+      - "user_receives_benefits_yes": ${ user_receives_benefits }
+      - "user_receives_benefits_no": ${ not user_receives_benefits }
+      - "user_pending_benefits_yes": ${ user_pending_benefits }
+      - "user_pending_benefits_no": ${ not user_pending_benefits }
+      - "user_income_ss": ${ user_income_ss }
+      - "user_income_employment": ${ user_income_employment }
+      - "user_income_employment_amount": ${ currency(user_income_employment_amount) }
+      - "user_income_ss_amount": ${ user_income_ss_amount }
+      - "user_income_child_support": ${ user_income_child_support }
+      - "user_income_unemployment": ${ user_income_unemployment }
+      - "user_income_child_support_amount": ${ currency(user_income_child_support_amount) }
+      - "user_income_unemployment_amount": ${ currency(user_income_unemployment_amount) }
+      - "user_income_pension": ${ user_income_pension }
+      - "user_income_pension_amount": ${ currency(user_income_pension_amount) }
+      - "user_income_household": ${ user_income_household }
+      - "user_income_household_amount": ${ currency(user_income_household_amount) }
+      - "user_income_other": ${ user_income_other }
+      - "user_income_amount": ${ currency(user_income_amount) }
+      - "user_income_other_kind": ${ user_income_other_kind }
+      - "user_income_none": ${ user_income_none }
+      - "user_income_total": ${ currency(user_income_total) }
+      - "user_annual_ss_amount": ${ currency(user_annual_ss_amount) }
+      - "user_annual_employment": ${ user_annual_employment }
+      - "user_annual_employment_amount": ${ currency(user_annual_employment_amount) }
+      - "user_annual_ss": ${ user_annual_ss }
+      - "user_annual_unemployment": ${ user_annual_unemployment }
+      - "user_annual_child_support": ${ user_annual_child_support }
+      - "user_annual_child_support_amount": ${ currency(user_annual_child_support_amount) }
+      - "user_annual_unemployment_amount": ${ currency(user_annual_unemployment_amount) }
+      - "user_annual_pension": ${ user_annual_pension }
+      - "user_annual_pension_amount": ${ currency(user_annual_pension_amount) }
+      - "user_annual_household": ${ user_annual_household }
+      - "user_annual_household_amount": ${ currency(user_annual_household_amount) }
+      - "user_annual_other": ${ user_annual_other }
+      - "user_annual_other_amount": ${ currency(user_annual_other_amount) }
+      - "user_annual_other_kind": ${ user_annual_other_kind }
+      - "user_annual_none": ${ user_annual_none }
+      - "user_annual_total": ${ currency(user_annual_total) }
+      - "user_expense_rent": ${ user_expense_rent }
+      - "user_expense_rent_amount": ${ currency(user_expense_rent_amount) }
+      - "user_expense_mortgage": ${ user_expense_mortgage }
+      - "user_expense_mortgage_amount": ${ currency(user_expense_mortgage_amount) }
+      - "user_expense_mortgage_other": ${ user_expense_mortgage_other }
+      - "user_expense_mortgage_other_amount": ${ currency(user_expense_mortgage_other_amount) }
+      - "user_expense_utilities": ${ user_expense_utilities }
+      - "user_expense_utilities_amount": ${ currency(user_expense_utilities_amount) }
+      - "user_expense_food": ${ user_expense_food }
+      - "user_expense_food_amount": ${ currency(user_expense_food_amount) }
+      - "user_expense_medical": ${ user_expense_medical }
+      - "user_expense_medical_amount": ${ currency(user_expense_medical_amount) }
+      - "user_expense_car": ${ user_expense_car }
+      - "user_expense_car_amount": ${ currency(user_expense_car_amount) }
+      - "user_expense_childcare": ${ user_expense_childcare }
+      - "user_expense_childcare_amount": ${ currency(user_expense_childcare_amount) }
+      - "user_expense_child_support": ${ user_expense_child_support }
+      - "user_expense_child_support_amount": ${ currency(user_expense_child_support_amount) }
+      - "user_expense_other": ${ user_expense_other }
+      - "user_expense_other_line1": ${ user_expense_other_line1 }
+      - "user_expense_other_amount": ${ currency(user_expense_other_amount) }
+      - "user_expense_other_line2": ${ user_expense_other_line2 }
+      - "user_expense_debt_other": ${ user_expense_debt_other }
+      - "user_expense_debt_other_line1": ${ user_expense_debt_other_line1 }
+      - "user_expense_debt_other_line2": ${ user_expense_debt_other_line2 }
+      - "user_expense_debt_other_amount": ${ currency(user_expense_debt_other_amount) }
+      - "user_expense_none": ${ user_expense_none }
+      - "user_expense_total": ${ currency(user_expense_total) }
+      - "user_asset_bank_account": ${ user_asset_bank_account }
+      - "user_asset_bank_account_amount": ${ currency(user_asset_bank_account_amount) }
+      - "user_asset_home": ${ user_asset_home }
+      - "user_asset_home_amount": ${ currency(user_asset_home_amount) }
+      - "user_asset_home_amount_owed": ${ currency(user_asset_home_amount_owed) }
+      - "user_asset_other_real_estate": ${ user_asset_other_real_estate }
+      - "user_asset_other_real_estate_amount": ${ currency(user_asset_other_real_estate_amount) }
+      - "user_asset_other_real_estate_amount_owed": ${ currency(user_asset_other_real_estate_amount_owed) }
+      - "user_asset_vehicle1": ${ user_asset_vehicle1 }
+      - "user_asset_vehicle1_paid_yes": ${ user_asset_vehicle1_paid }
+      - "user_asset_vehicle1_paid_no": ${ not user_asset_vehicle1_paid }
+      - "user_asset_vehicle1_amount": ${ currency(user_asset_vehicle1_amount) }
+      - "user_asset_vehicle2_paid_yes": ${ user_asset_vehicle2_paid }
+      - "user_asset_vehicle2_paid_no": ${ not user_asset_vehicle2_paid }
+      - "user_asset_vehicle2": ${ user_asset_vehicle2 }
+      - "user_asset_vehicle2_amount": ${ currency(user_asset_vehicle2_amount) }
+      - "user_asset_other_amount": ${ currency(user_asset_other_amount) }
+      - "user_asset_other": ${ user_asset_other }
+      - "user_asset_other_kind": ${ user_asset_other_kind }
+      - "user_asset_none": ${ user_asset_none }
+      - "relationship_to_minor": ${ relationship_to_minor }
+      - "user_consents_email_notice": ${ user_consents_email_notice }
+  - name: Post interview instructions
+    filename: Post-interview-instructions     
+    variable name: Post_interview_instructions[i]        
+    docx template file: IL_fee_waiver_next_steps.docx
+  - name: IL fee waiver attachment
+    filename: IL_fee_waiver     
+    variable name: IL_fee_waiver_attachment[i]        
+    skip undefined: True
+    pdf template file: FeeWaiver_Civil_Application.pdf
+    fields:
+      - "trial_court_county": ${ trial_court.address.county }
+      - "plaintiff": ${ plaintiffs[0] }
+      - "defendant": ${ defendants[0] }
+      - "docket_number": ${ docket_number }
+      - "docket_number__1": ${ docket_number }
+      - "docket_number__2": ${ docket_number }
+      - "user_name_full": ${ users[0] }
+      - "user_name_full__1": ${ users[0] }
+      - "user_birthdate": ${ users[0].birthdate.format() }
+      - "user_address_line_one": ${ users[0].address.line_one() }
+      - "user_address_city_state_zip": ${ users[0].address.line_two() }
+      - "user_signature": ${ users[0].signature_if_final(i) }
+      - "user_email": ${ users[0].email }
+      - "signer_address_city_state_zip": ${ signer[0].address.line_two() }
+      - "signer_phone_number": ${ signer[0].phone_number }
+      - "signer_address_line_one": ${ signer[0].address.line_one() }
+      - "user_dependents_adults": ${ user_dependents_adults }
+      - "user_dependents_children": ${ user_dependents_children }
+      - "user_receives_benefits_yes": ${ user_receives_benefits }
+      - "user_receives_benefits_no": ${ not user_receives_benefits }
+      - "user_pending_benefits_yes": ${ user_pending_benefits }
+      - "user_pending_benefits_no": ${ not user_pending_benefits }
+      - "user_income_ss": ${ user_income_ss }
+      - "user_income_employment": ${ user_income_employment }
+      - "user_income_employment_amount": ${ currency(user_income_employment_amount) }
+      - "user_income_ss_amount": ${ user_income_ss_amount }
+      - "user_income_child_support": ${ user_income_child_support }
+      - "user_income_unemployment": ${ user_income_unemployment }
+      - "user_income_child_support_amount": ${ currency(user_income_child_support_amount) }
+      - "user_income_unemployment_amount": ${ currency(user_income_unemployment_amount) }
+      - "user_income_pension": ${ user_income_pension }
+      - "user_income_pension_amount": ${ currency(user_income_pension_amount) }
+      - "user_income_household": ${ user_income_household }
+      - "user_income_household_amount": ${ currency(user_income_household_amount) }
+      - "user_income_other": ${ user_income_other }
+      - "user_income_amount": ${ currency(user_income_amount) }
+      - "user_income_other_kind": ${ user_income_other_kind }
+      - "user_income_none": ${ user_income_none }
+      - "user_income_total": ${ currency(user_income_total) }
+      - "user_annual_ss_amount": ${ currency(user_annual_ss_amount) }
+      - "user_annual_employment": ${ user_annual_employment }
+      - "user_annual_employment_amount": ${ currency(user_annual_employment_amount) }
+      - "user_annual_ss": ${ user_annual_ss }
+      - "user_annual_unemployment": ${ user_annual_unemployment }
+      - "user_annual_child_support": ${ user_annual_child_support }
+      - "user_annual_child_support_amount": ${ currency(user_annual_child_support_amount) }
+      - "user_annual_unemployment_amount": ${ currency(user_annual_unemployment_amount) }
+      - "user_annual_pension": ${ user_annual_pension }
+      - "user_annual_pension_amount": ${ currency(user_annual_pension_amount) }
+      - "user_annual_household": ${ user_annual_household }
+      - "user_annual_household_amount": ${ currency(user_annual_household_amount) }
+      - "user_annual_other": ${ user_annual_other }
+      - "user_annual_other_amount": ${ currency(user_annual_other_amount) }
+      - "user_annual_other_kind": ${ user_annual_other_kind }
+      - "user_annual_none": ${ user_annual_none }
+      - "user_annual_total": ${ currency(user_annual_total) }
+      - "user_expense_rent": ${ user_expense_rent }
+      - "user_expense_rent_amount": ${ currency(user_expense_rent_amount) }
+      - "user_expense_mortgage": ${ user_expense_mortgage }
+      - "user_expense_mortgage_amount": ${ currency(user_expense_mortgage_amount) }
+      - "user_expense_mortgage_other": ${ user_expense_mortgage_other }
+      - "user_expense_mortgage_other_amount": ${ currency(user_expense_mortgage_other_amount) }
+      - "user_expense_utilities": ${ user_expense_utilities }
+      - "user_expense_utilities_amount": ${ currency(user_expense_utilities_amount) }
+      - "user_expense_food": ${ user_expense_food }
+      - "user_expense_food_amount": ${ currency(user_expense_food_amount) }
+      - "user_expense_medical": ${ user_expense_medical }
+      - "user_expense_medical_amount": ${ currency(user_expense_medical_amount) }
+      - "user_expense_car": ${ user_expense_car }
+      - "user_expense_car_amount": ${ currency(user_expense_car_amount) }
+      - "user_expense_childcare": ${ user_expense_childcare }
+      - "user_expense_childcare_amount": ${ currency(user_expense_childcare_amount) }
+      - "user_expense_child_support": ${ user_expense_child_support }
+      - "user_expense_child_support_amount": ${ currency(user_expense_child_support_amount) }
+      - "user_expense_other": ${ user_expense_other }
+      - "user_expense_other_line1": ${ user_expense_other_line1 }
+      - "user_expense_other_amount": ${ currency(user_expense_other_amount) }
+      - "user_expense_other_line2": ${ user_expense_other_line2 }
+      - "user_expense_debt_other": ${ user_expense_debt_other }
+      - "user_expense_debt_other_line1": ${ user_expense_debt_other_line1 }
+      - "user_expense_debt_other_line2": ${ user_expense_debt_other_line2 }
+      - "user_expense_debt_other_amount": ${ currency(user_expense_debt_other_amount) }
+      - "user_expense_none": ${ user_expense_none }
+      - "user_expense_total": ${ currency(user_expense_total) }
+      - "user_asset_bank_account": ${ user_asset_bank_account }
+      - "user_asset_bank_account_amount": ${ currency(user_asset_bank_account_amount) }
+      - "user_asset_home": ${ user_asset_home }
+      - "user_asset_home_amount": ${ currency(user_asset_home_amount) }
+      - "user_asset_home_amount_owed": ${ currency(user_asset_home_amount_owed) }
+      - "user_asset_other_real_estate": ${ user_asset_other_real_estate }
+      - "user_asset_other_real_estate_amount": ${ currency(user_asset_other_real_estate_amount) }
+      - "user_asset_other_real_estate_amount_owed": ${ currency(user_asset_other_real_estate_amount_owed) }
+      - "user_asset_vehicle1": ${ user_asset_vehicle1 }
+      - "user_asset_vehicle1_paid_yes": ${ user_asset_vehicle1_paid }
+      - "user_asset_vehicle1_paid_no": ${ not user_asset_vehicle1_paid }
+      - "user_asset_vehicle1_amount": ${ currency(user_asset_vehicle1_amount) }
+      - "user_asset_vehicle2_paid_yes": ${ user_asset_vehicle2_paid }
+      - "user_asset_vehicle2_paid_no": ${ not user_asset_vehicle2_paid }
+      - "user_asset_vehicle2": ${ user_asset_vehicle2 }
+      - "user_asset_vehicle2_amount": ${ currency(user_asset_vehicle2_amount) }
+      - "user_asset_other_amount": ${ currency(user_asset_other_amount) }
+      - "user_asset_other": ${ user_asset_other }
+      - "user_asset_other_kind": ${ user_asset_other_kind }
+      - "user_asset_none": ${ user_asset_none }
+      - "relationship_to_minor": ${ relationship_to_minor }
+      - "user_consents_email_notice": ${ user_consents_email_notice }
