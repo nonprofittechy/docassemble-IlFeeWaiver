@@ -1,6 +1,11 @@
 ---
 include:
   - docassemble.AssemblyLine:al_package.yml
+  - docassemble.ILAO:ilao-interview-framework.yml
+---
+code: |
+    ilao_easy_form_url = "https://www.illinoislegalaid.org/"
+    ilao_easy_form_title = "Illinois Fee Waiver"
 ---
 metadata:
   title: |
@@ -57,6 +62,27 @@ code: |
     })
 ---
 code: |
+  allowed_courts = ['Circuit']
+---
+id: trial court county
+continue button field: case_county
+question: |
+  In which county was this case filed?
+fields:
+  - no label: trial_court_index
+    code: |
+      #court_list.filter_courts(allowed_courts, column='department')
+      court_list._load_courts()['address_county'].items()
+---
+depends on:
+  - trial_court_index
+code: |
+  trial_court = court_list.as_court('trial_court', trial_court_index)
+  # work around: use assignment instead of this variable
+  #trial_court.geolocate()
+  # use this in the attachment block: trial_court.address.county
+---
+code: |
   interview_short_title = "File an Application for a Fee Waiver"
 ---
 code: |
@@ -65,6 +91,8 @@ code: |
 objects:
   - signer: ALPeopleList.using(ask_number=True,target_number=1)
   - users: ALPeopleList.using(ask_number=True,target_number=1)
+  - court_list: ALCourtLoader.using(file_name='docassemble.ILAO:data/sources/il_courts.xlsx')
+  - court_emails: DAEmpty #dummy variable definition  
 ---
 sections:
   - review_IL_fee_waiver: Review your answers
@@ -79,16 +107,21 @@ code: |
   nav.set_section('review_IL_fee_waiver')
   # Below sets the user_role by asking a question.
   # You can set user_role directly instead to either 'plaintiff' or 'defendant'
-  user_ask_role
-  relationship_to_minor
-  user_receives_benefits
-  user_dependents_adults
-  set_progress(11.11)
-  user_income_ss
-  user_annual_ss_amount
-  user_expense_rent
-  set_progress(22.22)
-  user_asset_bank_account
+  filing_basis
+  if filing_basis != "filing_self":
+    signers = users
+  if user_receives_benefits:
+    user_qualifies_interstitial
+  else:
+    user_has_dependents
+    set_progress(11.11)
+    user_income_none
+    user_annual_none
+    user_expense_none
+    set_progress(22.22)
+    ask_user_assets
+    substantial_hardship_explanation
+  user_ask_role    
   user_consents_email_notice
   trial_court.address.address
   set_progress(33.33)
@@ -98,15 +131,16 @@ code: |
   set_progress(44.44)
   users.gather()
   set_parts(subtitle=str(users))
-  users[0].birthdate
+  users[0].birth_year
   users[0].address.address
   set_progress(55.56)
   users[0].address.address
   users[0].email
-  signer[0].address.address
-  set_progress(66.67)
-  signer[0].phone_number
-  signer[0].address.address
+  if filing_basis != "filing_self":
+    signer[0].address.address
+    set_progress(66.67)
+    signer[0].phone_number
+    signer[0].address.address
   interview_order_IL_fee_waiver = True
 ---
 ###################### Main order ######################
@@ -140,256 +174,450 @@ subquestion: |
 ---
 id: Do you receive any benefits
 question: |
-  Do you receive any benefits?
+  Do you currently receive any public benefits?
 subquestion: |
-  * Supplemental Security Income (SSI) (Not Social Security)
-  * Aid to the Aged, Blind and Disabled (AABD)
-  * Temporary Assistance to Needy Families (TANF)
-  * SNAP (Food Stamps)
-  * General Assistance (GA), Transitional Assistance, or State Children and Family Assistance
+  Check any benefits that you currently receive.
 fields:
-  - "I receive one of these benefits": user_receives_benefits
-    datatype: yesno
-  - "I have applied for benefits and my application is pending": user_pending_benefits
-    datatype: yesno
+  - no label: user_benefits
+    datatype: checkboxes
+    choices:
+      - Supplemental Security Income (SSI) (Not Social Security): SSI
+      - Aid to the Aged, Blind and Disabled (AABD): AABD
+      - Temporary Assistance to Needy Families (TANF): TANF
+      - SNAP (Food Stamps): SNAP
+      - General Assistance (GA): GA
+      - Transitional Assistance: TA
+      - State Children and Family Assistance: SCFA
+    required: False
+---
+code: |
+  user_receives_benefits = user_benefits.any_true()
+---
+continue button field: user_qualifies_interstitial
+question: |
+  You qualify for a fee waiver
+subquestion: |
+  Because you currently receive public benefits, you qualify for a 
+  100% waiver of fees for your civil case.
 ---
 id: How many dependents do you have
 question: |
-  How many dependents do you have?
+  Does anyone live with you that you support financially?  
 fields:
-  - "Number of adult dependents": user_dependents_adults
+  - I support someone who lives with me: user_has_dependents
+    datatype: yesnoradio
+  - Number of adults who live with me and who I support: user_dependents_adults
     datatype: integer
     min: 0
-  - "Number of minor dependents": user_dependents_children
+    show if: user_has_dependents
+  - Number of children under 18 who live with me and who I support: user_dependents_children
     datatype: integer
     min: 0
+    show if: user_has_dependents
 ---
 id: What income did you receive in the last month
 question: |
   What income did you receive in the last month?
 fields:
-  - "Social Security": user_income_ss
+  - "I do not have any income": user_income_none
     datatype: yesno
-  - "Employment": user_income_employment
+    disable others: True
+  - Money from a job or self-employment: user_income_employment
     datatype: yesno
   - "Amount": user_income_employment_amount
     datatype: currency
     min: 0
-  - "Amount": user_income_ss_amount
-    maxlength: 10
-  - "Child support income": user_income_child_support
-    datatype: yesno
+    show if: user_income_employment
   - "Unemployment benefits": user_income_unemployment
-    datatype: yesno
-  - "Amount": user_income_child_support_amount
-    datatype: currency
-    min: 0
+    datatype: yesno    
   - "Amount": user_income_unemployment_amount
     datatype: currency
     min: 0
-  - "Pension": user_income_pension
-    datatype: yesno
-  - "Amount": user_income_pension_amount
-    datatype: currency
-    min: 0
+    show if: user_income_unemployment
   - "Income from household members": user_income_household
     datatype: yesno
   - "Amount": user_income_household_amount
     datatype: currency
     min: 0
+    show if: user_income_household    
+  - "Social Security (not SSI)": user_income_ss
+    datatype: yesno
+  - "Amount": user_income_ss_amount
+    datatype: currency
+    maxlength: 10
+    show if: user_income_ss
+  - "Child support income": user_income_child_support
+    datatype: yesno
+  - "Amount": user_income_child_support_amount
+    datatype: currency
+    min: 0
+    show if: user_income_child_support
+  - "Pension": user_income_pension
+    datatype: yesno
+  - "Amount": user_income_pension_amount
+    datatype: currency
+    min: 0
+    show if: user_income_pension
   - "Other income": user_income_other
     datatype: yesno
+  - "Kind of other income": user_income_other_kind
+    maxlength: 30
+    show if: user_income_other
   - "Amount": user_income_amount
     datatype: currency
     min: 0
-  - "Kind of other income": user_income_other_kind
-    maxlength: 30
-  - "I do not have any income": user_income_none
-    datatype: yesno
-  - "Total monthly income": user_income_total
-    datatype: currency
-    min: 0
+    show if: user_income_other
+---
+code: |
+  def sum_if_defined(*pargs):
+    total = 0
+    for source in pargs:
+      if defined(source):
+        total += value(source)
+    return total        
+  
+  user_income_total = sum_if_defined('user_income_amount', 
+      'user_income_household_amount',
+      'user_income_ss_amount',
+      'user_income_employment_amount',
+      'user_income_child_support_amount',
+      'user_income_unemployment_amount',
+      'user_income_pension_amount')     
 ---
 id: What income did you receive in the last year
 question: |
-  What income did you receive in the last year?
+  What income did you get in the last 12 months?
+subquestion: |
+  We will use the information that you gave us about your income
+  last month as a starting point. Look it over carefully and make
+  any corrections that you need.
+  
+  Write the actual amount you got over the last 12 months for each kind
+  of income.
 fields:
-  - "Amount": user_annual_ss_amount
-    datatype: currency
-    min: 0
-  - "Annual income from work": user_annual_employment
+  - "No annual income": user_annual_none
     datatype: yesno
+    disable others: True
+  - Money from a job or self-employment: user_annual_employment
+    datatype: yesno
+    default: ${ showifdef('user_income_employment') }
   - "Amount": user_annual_employment_amount
     datatype: currency
     min: 0
-  - "Annual Social Security": user_annual_ss
+    default: |
+      % if defined('user_income_employment_amount'):
+      ${ user_income_employment_amount * 12 }
+      % endif
+    show if: user_annual_employment
+  - "Unemployment benefits": user_annual_unemployment
     datatype: yesno
-  - "Annual unemployment": user_annual_unemployment
-    datatype: yesno
-  - "Annual child support": user_annual_child_support
-    datatype: yesno
-  - "Amount": user_annual_child_support_amount
-    datatype: currency
-    min: 0
+    default: ${ showifdef('user_income_unemployment') }
   - "Amount": user_annual_unemployment_amount
     datatype: currency
     min: 0
-  - "Pension": user_annual_pension
+    default: |
+      % if defined('user_income_unemployment_amount'):
+      ${ user_income_unemployment_amount * 12 }
+      % endif
+    show if: user_annual_unemployment
+  - "Household members": user_annual_household
     datatype: yesno
-  - "Amount": user_annual_pension_amount
-    datatype: currency
-    min: 0
-  - "Annual household": user_annual_household
-    datatype: yesno
+    default: ${ showifdef('user_income_household') }
   - "Amount": user_annual_household_amount
     datatype: currency
     min: 0
-  - "Annual Other": user_annual_other
+    show if: user_annual_household
+    default: |
+      % if defined('user_income_household'):
+      ${ user_income_household * 12 }
+      % endif    
+  - "Social Security": user_annual_ss
     datatype: yesno
+    default: ${ showifdef('user_income_ss') }
+  - "Amount": user_annual_ss_amount
+    datatype: currency
+    min: 0
+    default: |
+      % if defined('user_income_ss_amount'):
+      ${ user_income_ss_amount * 12 }
+      % endif
+    show if: user_annual_ss      
+  - "Child support": user_annual_child_support
+    datatype: yesno
+    default: ${ showifdef('user_income_child_support') }
+  - "Amount": user_annual_child_support_amount
+    datatype: currency
+    min: 0
+    show if: user_annual_child_support
+    default: |
+      % if defined('user_income_child_support_amount'):
+      ${ user_income_child_support_amount * 12 }
+      % endif
+  - "Pension": user_annual_pension
+    datatype: yesno
+    default: ${ showifdef('user_income_pension') }
+  - "Amount": user_annual_pension_amount
+    datatype: currency
+    min: 0
+    default: |
+      % if defined('user_income_pension_amount'):
+      ${ user_income_pension_amount * 12 }
+      % endif
+    show if: user_annual_pension
+  - "Other": user_annual_other
+    datatype: yesno
+    default: ${ showifdef('user_income_other') }
+  - "Other type": user_annual_other_kind
+    maxlength: 30
+    show if: user_annual_other
+    default: |
+      ${ showifdef('user_income_other_kind') }    
   - "Amount": user_annual_other_amount
     datatype: currency
     min: 0
-  - "Other type": user_annual_other_kind
-    maxlength: 30
-  - "No annual income": user_annual_none
-    datatype: yesno
-  - "Total annual income": user_annual_total
-    datatype: currency
-    min: 0
+    show if: user_annual_other
+    default: |
+      % if defined('user_income_amount'):
+      ${ user_income_amount * 12 }
+      % endif
+---
+code: |
+  user_annual_total = sum_if_defined(
+      'user_annual_child_support_amount',
+      'user_annual_employment_amount',
+      'user_annual_household_amount',
+      'user_annual_other_amount',
+      'user_annual_pension_amount',
+      'user_annual_ss_amount',
+      'user_annual_unemployment_amount',
+  )
 ---
 id: What expenses do you have right now
 question: |
   What expenses do you have right now?
+subquestion: |
+  Write the amount that each expense costs you each month.
 fields:
-  - "Rent": user_expense_rent
+  - "I have no expenses": user_expense_none
     datatype: yesno
+    disable others: True
+  - "Rent": user_expense_rent
+    datatype: yesno    
   - "Amount": user_expense_rent_amount
     datatype: currency
     min: 0
+    show if: user_expense_rent
   - "Mortgage for home": user_expense_mortgage
     datatype: yesno
   - "Amount": user_expense_mortgage_amount
     datatype: currency
     min: 0
+    show if: user_expense_mortgage
   - "Other mortgage": user_expense_mortgage_other
     datatype: yesno
   - "Amount": user_expense_mortgage_other_amount
     datatype: currency
     min: 0
+    show if: user_expense_mortgage_other
   - "Utilities": user_expense_utilities
     datatype: yesno
   - "Amount": user_expense_utilities_amount
     datatype: currency
     min: 0
+    show if: user_expense_utilities
   - "Food": user_expense_food
     datatype: yesno
   - "Amount": user_expense_food_amount
     datatype: currency
     min: 0
+    show if: user_expense_food
   - "Medical expenses": user_expense_medical
     datatype: yesno
   - "Amount": user_expense_medical_amount
     datatype: currency
     min: 0
+    show if: user_expense_medical
   - "Car loan": user_expense_car
     datatype: yesno
   - "Amount": user_expense_car_amount
     datatype: currency
     min: 0
+    show if: user_expense_car
   - "Childcare": user_expense_childcare
     datatype: yesno
   - "Amount": user_expense_childcare_amount
     datatype: currency
     min: 0
+    show if: user_expense_childcare
   - "Child support": user_expense_child_support
     datatype: yesno
   - "Amount": user_expense_child_support_amount
     datatype: currency
     min: 0
+    show if: user_expense_child_support
   - "Other expense": user_expense_other
     datatype: yesno
   - "Kind": user_expense_other_line1
     maxlength: 24
+    show if: user_expense_other
+  #- "Kind (continued)": user_expense_other_line2
+  #  maxlength: 53    
   - "Amount": user_expense_other_amount
     datatype: currency
     min: 0
-  - "Kind (continued)": user_expense_other_line2
-    maxlength: 53
-  - "Debt": user_expense_debt_other
+    show if: user_expense_other
+  - "Other debt payments": user_expense_debt_other
     datatype: yesno
   - "Kind": user_expense_debt_other_line1
     maxlength: 28
-  - "Kind (continued)": user_expense_debt_other_line2
-    maxlength: 53
+    show if: user_expense_debt_other
+  #- "Kind (continued)": user_expense_debt_other_line2
+  #  maxlength: 53
   - "Amount": user_expense_debt_other_amount
     datatype: currency
     min: 0
-  - "I have no expenses": user_expense_none
-    datatype: yesno
-  - "Total": user_expense_total
-    datatype: currency
-    min: 0
+    show if: user_expense_debt_other
 ---
+code: |
+  user_expense_total = sum_if_defined(
+      'user_expense_car_amount',
+      'user_expense_child_support_amount',
+      'user_expense_childcare_amount',
+      'user_expense_debt_other_amount',
+      'user_expense_food_amount',
+      'user_expense_medical_amount',
+      'user_expense_mortgage_amount',
+      'user_expense_mortgage_other_amount',
+      'user_expense_other_amount',
+      'user_expense_rent_amount',
+      'user_expense_utilities_amount',
+    )
+---
+continue button field: ask_user_assets  
 id: What assets do you have
 question: |
   What assets do you have?
 fields:
+  - "No assets": user_asset_none
+    datatype: yesno
+    disable others: True
   - "Bank account or cash": user_asset_bank_account
     datatype: yesno
   - "Amount": user_asset_bank_account_amount
     datatype: currency
     min: 0
+    show if: user_asset_bank_account
   - "House I live in": user_asset_home
     datatype: yesno
   - "Value": user_asset_home_amount
     datatype: currency
     min: 0
+    show if: user_asset_home
   - "Amount owed on mortgage": user_asset_home_amount_owed
     datatype: currency
     min: 0
+    show if: user_asset_home
   - "Other real estate": user_asset_other_real_estate
     datatype: yesno
-  - "Amount": user_asset_other_real_estate_amount
+  - "Value": user_asset_other_real_estate_amount
     datatype: currency
     min: 0
+    show if: user_asset_other_real_estate
   - "Amount owed on mortgage": user_asset_other_real_estate_amount_owed
     datatype: currency
     min: 0
+    show if: user_asset_other_real_estate
   - "First vehicle": user_asset_vehicle1
     datatype: yesno
   - "Vehicle is paid in full": user_asset_vehicle1_paid
     datatype: yesno
+    show if: user_asset_vehicle1
   - "Value": user_asset_vehicle1_amount
     datatype: currency
     min: 0
-  - "Vehicle is paid in full": user_asset_vehicle2_paid
-    datatype: yesno
+    show if: user_asset_vehicle1
   - "Second vehicle": user_asset_vehicle2
     datatype: yesno
+  - "Vehicle is paid in full": user_asset_vehicle2_paid
+    datatype: yesno
+    show if: user_asset_vehicle2    
   - "Value": user_asset_vehicle2_amount
     datatype: currency
     min: 0
-  - "Amount": user_asset_other_amount
-    datatype: currency
-    min: 0
+    show if: user_asset_vehicle2
   - "Other asset": user_asset_other
     datatype: yesno
   - "Kind": user_asset_other_kind
     maxlength: 29
-  - "No assets": user_asset_none
-    datatype: yesno
+    show if: user_asset_other    
+  - "Amount": user_asset_other_amount
+    datatype: currency
+    min: 0
+    show if: user_asset_other 
+#validation code: |
+#  if not user_asset_none and not (
+#    user_asset_bank_account or 
+#    user_asset_home or
+#    user_asset_other_real_estate or
+#    user_asset_vehicle1 or
+#    user_asset_vehicle2 or
+#    user_asset_other):
+#    validation_error("You need to select one", field="user_asset_none")
 ---
 id: Who is filing this fee waiver
 question: |
-  Who is filing this fee waiver?
+  Who is completing this fee waiver?
 fields:
-  - "Relationship of signer to minor or incompetent adult": relationship_to_minor
+  - I am filing: filing_basis
+    datatype: radio
+    choices:
+      - For myself: filing_self
+      - On behalf of a minor (someone under 18) or an incompetent adult: filing_on_behalf_of      
+  - note: |
+      **Okay**. List **your** name below. Fill in the rest of the information on
+      this website as if you are the person who you are helping. 
+    show if: 
+      variable: filing_basis
+      is: filing_on_behalf_of      
+  - How are you related to the filer?: relationship_to_minor
     maxlength: 33
+    show if: 
+      variable: filing_basis
+      is: filing_on_behalf_of
 ---
 id: Do you agree to get notices from the court by email
 question: |
   Do you agree to get notices from the court by email?
 yesno: user_consents_email_notice
+---
+id: birth year
+question: |
+  What year were you born?
+fields:
+  - Year of birth: users[0].birth_year
+    input type: combobox
+    datatype: integer
+    maxlength: 4
+    code: |
+      reversed(range(today().year-120, today().year))
+---
+id: substantial hardship
+question: |
+  Will you face substantial hardship if you do not get a fee waiver?
+subquestion: |
+  If you want to explain to a judge why you would be harmed if you do not
+  get a fee waiver, you can explain it here.
+  
+  Complete the sentence below:
+fields:
+  - label: |
+      (Optional) My family or I would face substantial hardship if I have to pay the
+      fees, costs, and charges because:
+    field: substantial_hardship_explanation
+    datatype: area
+    rows: 4
+    maxlength: 640
+    required: False
 ---
 id: preview IL_fee_waiver
 question: |
@@ -427,10 +655,10 @@ review:
     button: |
       **I receive one of these benefits**:
       ${ word(yesno(user_receives_benefits)) }
-  - Edit: user_pending_benefits
-    button: |
-      **I have applied for benefits and my application is pending**:
-      ${ word(yesno(user_pending_benefits)) }
+  #- Edit: user_pending_benefits
+  #  button: |
+  #    **I have applied for benefits and my application is pending**:
+  #    ${ word(yesno(user_pending_benefits)) }
   - Edit: user_income_ss
     button: |
       **Social Security**:
@@ -798,6 +1026,10 @@ review:
       % for item in signer:
         * ${ item }
       % endfor
+  - Edit: substantial_hardship_explanation
+    button: |
+      **I will face substantial hardship because**:
+      > ${ substantial_hardship_explanation }
 ---
 continue button field: plaintiffs.revisit
 question: |
@@ -846,19 +1078,19 @@ subquestion: |
 table: users.table
 rows: users
 columns:
-  - name: |
+  - Name: |
       row_item.name.full() if defined("row_item.name.first") else ""
-  - birthdate: |
-      row_item.birthdate if defined("row_item.birthdate") else ""
-  - address: |
+  - Year of birth: |
+      row_item.birth_year if defined("row_item.birth_year") else ""
+  - Address: |
       row_item.address.block() if defined("row_item.address.address") else ""
-  - signature: |
+  - Signature: |
       row_item.signature if defined("row_item.signature") else ""
-  - email: |
+  - Email: |
       row_item.email if defined("row_item.email") else ""
 edit:
   - name.first
-  - birthdate
+  - birth_year
   - address.address
   - signature
   - email
@@ -884,7 +1116,19 @@ edit:
   - address.address
   - phone_number
 confirm: True
-
+---
+id: docket number
+question: |
+  What is your case number?
+fields:
+  - I don't know the case number: dont_know_docket_number
+    datatype: yesno    
+  - no label: docket_number
+    hide if: dont_know_docket_number
+validation code: |
+  # This should be safe to 
+  if dont_know_docket_number:
+    docket_number = ''      
 ---
 id: download IL_fee_waiver
 event: IL_fee_waiver_download
@@ -904,21 +1148,36 @@ subquestion: |
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
 
 progress: 100
+css: ${ docs_list_css() }
 ---
 objects:
   - Post_interview_instructions: ALDocument.using(title="Instructions", filename="IL_fee_waiver_next_steps.docx", enabled=True, has_addendum=False)
   - IL_fee_waiver_attachment: ALDocument.using(title="Fee Waiver Application", filename="FeeWaiver_Civil_Application.pdf", enabled=True, has_addendum=False)
+  - IL_fee_waiver_order: ALDocument.using(title="Fee Waiver Order", filename="FeeWaiver_Civil_Order.pdf", enabled=True, has_addendum=False)
 ---
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[Post_interview_instructions,IL_fee_waiver_attachment], filename="IL_fee_waiver_package.pdf", title="All forms to download for your records")
-  - al_court_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment], filename="IL_fee_waiver_package.pdf", title="All forms to download for your records")
+  - al_user_bundle: ALDocumentBundle.using(elements=[Post_interview_instructions,IL_fee_waiver_attachment, IL_fee_waiver_order], filename="IL_fee_waiver_package.pdf", title="All forms to download for your records")
+  - al_court_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment, IL_fee_waiver_order], filename="IL_fee_waiver_package.pdf", title="All forms to download for your records")
 ---
 attachments:
   - name: Post interview instructions
     filename: Post-interview-instructions     
     variable name: Post_interview_instructions[i]        
     docx template file: IL_fee_waiver_next_steps.docx
-  - name: IL fee waiver attachment
+  - name: IL fee waiver order   
+    filename: IL_fee_waiver_order
+    variable name: IL_fee_waiver_order[i]
+    skip undefined: True
+    pdf template file: FW-CIV-Order.pdf
+    fields:
+      - "trial_court_county": ${ trial_court.address.county }
+      - "plaintiff": ${ plaintiffs[0] }
+      - "defendant": ${ defendants[0] }
+      - "docket_number": ${ docket_number }
+      - "docket_number__1": ${ docket_number }
+      - "user_name_full": ${ users[0] }
+      
+  - name: IL fee waiver petition
     filename: IL_fee_waiver     
     variable name: IL_fee_waiver_attachment[i]        
     skip undefined: True
@@ -932,54 +1191,159 @@ attachments:
       - "docket_number__2": ${ docket_number }
       - "user_name_full": ${ users[0] }
       - "user_name_full__1": ${ users[0] }
-      - "user_birthdate": ${ users[0].birthdate.format() }
+      - "user_birthdate": ${ users[0].birth_year }
       - "user_address_line_one": ${ users[0].address.line_one() }
       - "user_address_city_state_zip": ${ users[0].address.line_two() }
       - "user_signature": ${ users[0].signature_if_final(i) }
       - "user_email": ${ users[0].email }
-      - "signer_address_city_state_zip": ${ signer[0].address.line_two() }
-      - "signer_phone_number": ${ signer[0].phone_number }
-      - "signer_address_line_one": ${ signer[0].address.line_one() }
-      - "user_dependents_adults": ${ user_dependents_adults }
-      - "user_dependents_children": ${ user_dependents_children }
+      - "signer_address_city_state_zip": |
+          ${ signer[0].address.line_two() }
+      - "signer_phone_number": |
+          ${ signer[0].phone_number }
+      - "signer_address_line_one": |
+          ${ signer[0].address.line_one() }
+      - "user_dependents_adults": |
+          % if user_has_dependents:
+          ${ user_dependents_adults }
+          % endif
+      - "user_dependents_children": |
+          % if user_has_dependents:
+          ${ user_dependents_children }
+          % endif
       - "user_receives_benefits_yes": ${ user_receives_benefits }
       - "user_receives_benefits_no": ${ not user_receives_benefits }
-      - "user_pending_benefits_yes": ${ user_pending_benefits }
-      - "user_pending_benefits_no": ${ not user_pending_benefits }
-      - "user_income_ss": ${ user_income_ss }
-      - "user_income_employment": ${ user_income_employment }
-      - "user_income_employment_amount": ${ currency(user_income_employment_amount) }
-      - "user_income_ss_amount": ${ user_income_ss_amount }
-      - "user_income_child_support": ${ user_income_child_support }
-      - "user_income_unemployment": ${ user_income_unemployment }
-      - "user_income_child_support_amount": ${ currency(user_income_child_support_amount) }
-      - "user_income_unemployment_amount": ${ currency(user_income_unemployment_amount) }
-      - "user_income_pension": ${ user_income_pension }
-      - "user_income_pension_amount": ${ currency(user_income_pension_amount) }
-      - "user_income_household": ${ user_income_household }
-      - "user_income_household_amount": ${ currency(user_income_household_amount) }
-      - "user_income_other": ${ user_income_other }
-      - "user_income_amount": ${ currency(user_income_amount) }
-      - "user_income_other_kind": ${ user_income_other_kind }
+      #- "user_pending_benefits_yes": ${ user_pending_benefits }
+      #- "user_pending_benefits_no": ${ not user_pending_benefits }
+      - "user_income_ss": |
+          % if not user_income_none:
+          ${ user_income_ss }
+          % endif
+      - "user_income_employment":  |
+          % if not user_income_none:
+          ${ user_income_employment }
+          % endif
+      - "user_income_employment_amount":  |
+          % if not user_income_none:
+          ${ currency(user_income_employment_amount) }
+          % endif
+      - "user_income_ss_amount":  |
+          % if not user_income_none:
+          ${ user_income_ss_amount }
+          % endif
+      - "user_income_child_support":  |
+          % if not user_income_none:
+          ${ user_income_child_support }
+          % endif
+      - "user_income_unemployment":  |
+          % if not user_income_none:
+          ${ user_income_unemployment }
+          % endif
+      - "user_income_child_support_amount":  |
+          % if not user_income_none:
+          ${ currency(user_income_child_support_amount) }
+          % endif
+      - "user_income_unemployment_amount":  |
+          % if not user_income_none:
+          ${ currency(user_income_unemployment_amount) }
+          % endif
+      - "user_income_pension":  |
+          % if not user_income_none:
+          ${ user_income_pension }
+          % endif
+      - "user_income_pension_amount":  |
+          % if not user_income_none:
+          ${ currency(user_income_pension_amount) }
+          % endif
+      - "user_income_household":  |
+          % if not user_income_none:
+          ${ user_income_household }
+          % endif
+      - "user_income_household_amount":  |
+          % if not user_income_none:
+          ${ currency(user_income_household_amount) }
+          % endif
+      - "user_income_other":  |
+          % if not user_income_none:
+          ${ user_income_other }
+          % endif
+      - "user_income_amount":  |
+          % if not user_income_none:
+          ${ currency(user_income_amount) }
+          % endif
+      - "user_income_other_kind":  |
+          % if not user_income_none:
+          ${ user_income_other_kind }
+          % endif
       - "user_income_none": ${ user_income_none }
-      - "user_income_total": ${ currency(user_income_total) }
-      - "user_annual_ss_amount": ${ currency(user_annual_ss_amount) }
-      - "user_annual_employment": ${ user_annual_employment }
-      - "user_annual_employment_amount": ${ currency(user_annual_employment_amount) }
-      - "user_annual_ss": ${ user_annual_ss }
-      - "user_annual_unemployment": ${ user_annual_unemployment }
-      - "user_annual_child_support": ${ user_annual_child_support }
-      - "user_annual_child_support_amount": ${ currency(user_annual_child_support_amount) }
-      - "user_annual_unemployment_amount": ${ currency(user_annual_unemployment_amount) }
-      - "user_annual_pension": ${ user_annual_pension }
-      - "user_annual_pension_amount": ${ currency(user_annual_pension_amount) }
-      - "user_annual_household": ${ user_annual_household }
-      - "user_annual_household_amount": ${ currency(user_annual_household_amount) }
-      - "user_annual_other": ${ user_annual_other }
-      - "user_annual_other_amount": ${ currency(user_annual_other_amount) }
-      - "user_annual_other_kind": ${ user_annual_other_kind }
+      - "user_income_total":  |
+          % if not user_income_none:
+          ${ currency(user_income_total) }
+          % endif
+      - "user_annual_ss_amount": |
+          % if not user_annual_none:
+          ${ currency(user_annual_ss_amount) }
+          % endif
+      - "user_annual_employment": |           
+          % if not user_annual_none:
+          ${ user_annual_employment }
+          % endif
+      - "user_annual_employment_amount": |
+          % if not user_annual_none:
+          ${ currency(user_annual_employment_amount) }
+          % endif 
+      - "user_annual_ss": |
+          % if not user_annual_none:
+          ${ user_annual_ss }
+          % endif
+      - "user_annual_unemployment": |
+          % if not user_annual_none:
+          ${ user_annual_unemployment }
+          % endif
+      - "user_annual_child_support": |
+          % if not user_annual_none:
+          ${ user_annual_child_support }
+          % endif
+      - "user_annual_child_support_amount": |
+          % if not user_annual_none:
+          ${ currency(user_annual_child_support_amount) }
+          % endif
+      - "user_annual_unemployment_amount": |
+          % if not user_annual_none:
+          ${ currency(user_annual_unemployment_amount) }
+          % endif
+      - "user_annual_pension": |
+          % if not user_annual_none:
+          ${ user_annual_pension }
+          % endif
+      - "user_annual_pension_amount": |
+          % if not user_annual_none:
+          ${ currency(user_annual_pension_amount) }
+          % endif
+      - "user_annual_household": |
+          % if not user_annual_none:
+          ${ user_annual_household }
+          % endif
+      - "user_annual_household_amount": |
+          % if not user_annual_none:
+          ${ currency(user_annual_household_amount) }
+          % endif
+      - "user_annual_other": |
+          % if not user_annual_none:
+          ${ user_annual_other }
+          % endif
+      - "user_annual_other_amount": |
+          % if not user_annual_none:
+          ${ currency(user_annual_other_amount) }
+          % endif
+      - "user_annual_other_kind": |
+          % if not user_annual_none:
+          ${ user_annual_other_kind }
+          % endif
       - "user_annual_none": ${ user_annual_none }
-      - "user_annual_total": ${ currency(user_annual_total) }
+      - "user_annual_total": |
+          % if not user_annual_none:
+          ${ currency(user_annual_total) }
+          % endif
       - "user_expense_rent": ${ user_expense_rent }
       - "user_expense_rent_amount": ${ currency(user_expense_rent_amount) }
       - "user_expense_mortgage": ${ user_expense_mortgage }
@@ -1028,5 +1392,9 @@ attachments:
       - "user_asset_other": ${ user_asset_other }
       - "user_asset_other_kind": ${ user_asset_other_kind }
       - "user_asset_none": ${ user_asset_none }
-      - "relationship_to_minor": ${ relationship_to_minor }
+      - "relationship_to_minor": |
+          % if filing_basis == "on_behalf_of":
+          ${ relationship_to_minor  }
+          % endif
       - "user_consents_email_notice": ${ user_consents_email_notice }
+      - "substantial_hardship_explanation": ${ substantial_hardship_explanation }
