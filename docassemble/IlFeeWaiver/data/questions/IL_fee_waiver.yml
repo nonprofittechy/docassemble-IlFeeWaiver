@@ -573,6 +573,22 @@ fields:
 #    validation_error("You need to select one", field="user_asset_none")
 ---
 code: |
+  user_asset_total = (sum_if_defined(
+    'user_asset_bank_account_amount'
+    'user_asset_home_amount'
+    'user_asset_other_real_estate_amount'
+    'user_asset_vehicle1_amount',
+    'user_asset_vehicle2_amount',
+    'user_asset_other_amount',
+    ) - 
+    sum_if_defined('user_asset_other_real_estate_amount_owed',
+      'user_asset_home_amount_owed')
+  )
+    
+  # 'user_asset_vehicle1_paid',
+  # 'user_asset_vehicle2_paid', 
+---
+code: |
   if user_has_dependents:
     household_size = 1 + user_dependents_adults + user_dependents_children
     last_month_income_qualifies = poverty_scale_income_qualifies(user_income_total, household_size=household_size, multiplier=1.25)
@@ -597,8 +613,11 @@ subquestion: |
   #### Why we think that you do not qualify
   % endif
   
+  The judge will consider your income, assets, and expenses. Our prediction
+  is based only on your income.
+  
   For your household size, your monthly income needs to be at or below 
-  ${ currency(poverty_scale_get_income_limit(household_size=household_size, multiplier=1.25)/12) }
+  ${ currency(poverty_scale_get_income_limit(household_size=household_size, multiplier=1.25)/12) }.
   
   You said that your income over the last month was 
   ${ currency(user_income_total) }.
@@ -606,6 +625,9 @@ subquestion: |
   You said that your income over the last 12 months was 
   ${ currency(user_annual_total) } (${ currency(user_annual_total/12) }
   per month).
+  
+  The judge will also consider your total assets of ${ currency(user_asset_total) }
+  and your total monthly expenses of ${ currency(user_expense_total) }. 
   
   #### A judge makes the final decision
   This website cannot tell you if you qualify for sure. The judge will
@@ -616,16 +638,16 @@ subquestion: |
 ---
 template: other_fee_waiver_considerations
 subject: |
-  What else the court will consider
+  What else the judge will consider
 content: |  
-  The court will look at all of the information that you provided on this
+  The judge will look at all of the information that you provided on this
   form to decide if you qualify. For example, they will compare your
   assets and expenses. They will also read any additional explanation that you
   decide to provide.
   
   Some of your assets will not be counted. For example: the value of your car,
   up to $2,400, is not counted. You can have up to $4,000 in other assets,
-  such as bank accoutns, that are not counted. The assets that are not
+  such as bank accounts, that are not counted. The assets that are not
   counted are set by law: specifically, 
   [735 ILCS 5/12-901](https://www.ilga.gov/legislation/ilcs/fulltext.asp?DocName=073500050K12-1001)
   and [735 ILCS 5/12-1001](https://www.ilga.gov/legislation/ilcs/fulltext.asp?DocName=073500050K12-901).
