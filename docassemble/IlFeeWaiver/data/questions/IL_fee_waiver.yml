@@ -11,6 +11,15 @@ code: |
     ilao_easy_form_url = "https://www.illinoislegalaid.org/"
     ilao_easy_form_title = "Illinois Fee Waiver"
 ---
+code: |
+  github_repo_name = "docassemble-IlFeeWaiver"
+---
+default screen parts:
+  footer: |
+    [:share-alt-square: Share](${ url_ask([{'undefine': ['al_sharing_type','al_how_share_link']}, 'al_share_form_screen', {'recompute': ['al_did_share_form']}, 'al_share_results']) })
+    [:info-circle: About](${ url_action('about_this_interview') })
+    [:comment-dots: Feedback](${ interview_url(i=feedback_form, github_repo=github_repo_name, github_user=github_user, variable=user_info().variable, question_id=user_info().question_id, package_version=package_version_number, local=False,reset=1) } ){:target="_blank"}    
+---
 metadata:
   title: |
     Application for Fee Waiver
@@ -101,6 +110,8 @@ objects:
 sections:
   - review_IL_fee_waiver: Review your answers
 ---
+scan for variables: False
+sets: interview_order_IL_fee_waiver
 #################### Interview order #####################
 comment: |
   Controls order and branching logic for questions specific to this form
@@ -113,10 +124,12 @@ code: |
   # You can set user_role directly instead to either 'plaintiff' or 'defendant'
   filing_basis
   if filing_basis != "filing_self":
-    signers = users
+    signer = users
+    signer[0].email
   if user_receives_benefits:
     user_qualifies_interstitial
   else:
+    user_applied_for_benefits
     user_has_dependents
     set_progress(11.11)
     user_income_none
@@ -131,20 +144,22 @@ code: |
     substantial_hardship_explanation
     
   user_ask_role    
-  user_consents_email_notice
+  # user_consents_email_notice
   trial_court.address.address
   set_progress(33.33)
-  plaintiffs.gather()
-  defendants.gather()
+  # plaintiffs.gather()
+  #defendants.gather()
   docket_number
   set_progress(44.44)
+  other_parties.gather()
   users.gather()
   set_parts(subtitle=str(users))
   users[0].birth_year
   users[0].address.address
   set_progress(55.56)
   users[0].address.address
-  users[0].email
+  if filing_basis == "filing_self":
+    users[0].email
   if filing_basis != "filing_self":
     signer[0].address.address
     set_progress(66.67)
@@ -195,11 +210,30 @@ subquestion: |
 ---
 id: Do you receive any benefits
 question: |
-  Do you currently receive any public benefits?
+  Do you **currently** receive any public benefits?
 subquestion: |
   Check any benefits that you currently receive.
 fields:
   - no label: user_benefits
+    datatype: checkboxes
+    choices:
+      - Supplemental Security Income (SSI) (Not Social Security): SSI
+      - Aid to the Aged, Blind and Disabled (AABD): AABD
+      - Temporary Assistance to Needy Families (TANF): TANF
+      - SNAP (Food Stamps): SNAP
+      - General Assistance (GA): GA
+      - Transitional Assistance: TA
+      - State Children and Family Assistance: SCFA
+    required: False
+---
+id: Did you apply for any benefits
+question: |
+  Have you applied and are waiting to learn if you receive any public benefits?
+subquestion: |
+  Check any benefits that you have **applied** for but do not yet
+  know if you will receive because your application is pending.
+fields:
+  - no label: user_applied_for_benefits
     datatype: checkboxes
     choices:
       - Supplemental Security Income (SSI) (Not Social Security): SSI
@@ -284,7 +318,7 @@ fields:
   - "Kind of other income": user_income_other_kind
     maxlength: 30
     show if: user_income_other
-  - "Amount": user_income_amount
+  - "Amount": user_income_other_amount
     datatype: currency
     min: 0
     show if: user_income_other
@@ -297,7 +331,7 @@ code: |
         total += value(source)
     return total        
   
-  user_income_total = sum_if_defined('user_income_amount', 
+  user_income_total = sum_if_defined('user_income_other_amount', 
       'user_income_household_amount',
       'user_income_ss_amount',
       'user_income_employment_amount',
@@ -398,8 +432,8 @@ fields:
     min: 0
     show if: user_annual_other
     default: |
-      % if defined('user_income_amount'):
-      ${ user_income_amount * 12 }
+      % if defined('user_income_other_amount'):
+      ${ user_income_other_amount * 12 }
       % endif
 ---
 code: |
@@ -434,12 +468,12 @@ fields:
     datatype: currency
     min: 0
     show if: user_expense_mortgage
-  - "Other mortgage": user_expense_mortgage_other
+  - "Other mortgage": user_expense_other_mortgage
     datatype: yesno
-  - "Amount": user_expense_mortgage_other_amount
+  - "Amount": user_expense_other_mortgage_amount
     datatype: currency
     min: 0
-    show if: user_expense_mortgage_other
+    show if: user_expense_other_mortgage
   - "Utilities": user_expense_utilities
     datatype: yesno
   - "Amount": user_expense_utilities_amount
@@ -508,7 +542,7 @@ code: |
       'user_expense_food_amount',
       'user_expense_medical_amount',
       'user_expense_mortgage_amount',
-      'user_expense_mortgage_other_amount',
+      'user_expense_other_mortgage_amount',
       'user_expense_other_amount',
       'user_expense_rent_amount',
       'user_expense_utilities_amount',
@@ -686,6 +720,31 @@ fields:
     show if: 
       variable: filing_basis
       is: filing_on_behalf_of      
+  - First name: signer[0].name.first
+    show if: 
+      variable: filing_basis
+      is: filing_on_behalf_of
+  - Middle name: signer[0].name.middle
+    required: False
+    show if: 
+      variable: filing_basis
+      is: filing_on_behalf_of
+  - Last name: signer[0].name.last
+    show if: 
+      variable: filing_basis
+      is: filing_on_behalf_of
+  - Suffix: signer[0].name.suffix
+    required: False
+    code: |
+      name_suffix()
+    show if: 
+      variable: filing_basis
+      is: filing_on_behalf_of        
+  - Attorney number (if any): signer_attorney_number      
+    required: False
+    show if: 
+      variable: filing_basis
+      is: filing_on_behalf_of
   - How are you related to the filer?: relationship_to_minor
     maxlength: 33
     show if: 
@@ -818,10 +877,10 @@ review:
     button: |
       **Other income**:
       ${ word(yesno(user_income_other)) }
-  - Edit: user_income_amount
+  - Edit: user_income_other_amount
     button: |
       **Amount**:
-      ${ currency(user_income_amount) }
+      ${ currency(user_income_other_amount) }
   - Edit: user_income_other_kind
     button: |
       **Kind of other income**:
@@ -918,14 +977,14 @@ review:
     button: |
       **Amount**:
       ${ currency(user_expense_mortgage_amount) }
-  - Edit: user_expense_mortgage_other
+  - Edit: user_expense_other_mortgage
     button: |
       **Other mortgage**:
-      ${ word(yesno(user_expense_mortgage_other)) }
-  - Edit: user_expense_mortgage_other_amount
+      ${ word(yesno(user_expense_other_mortgage)) }
+  - Edit: user_expense_other_mortgage_amount
     button: |
       **Amount**:
-      ${ currency(user_expense_mortgage_other_amount) }
+      ${ currency(user_expense_other_mortgage_amount) }
   - Edit: user_expense_utilities
     button: |
       **Utilities**:
@@ -986,10 +1045,6 @@ review:
     button: |
       **Amount**:
       ${ currency(user_expense_other_amount) }
-  - Edit: user_expense_other_line2
-    button: |
-      **Kind (continued)**:
-      ${ user_expense_other_line2 }
   - Edit: user_expense_debt_other
     button: |
       **Debt**:
@@ -998,10 +1053,6 @@ review:
     button: |
       **Kind**:
       ${ user_expense_debt_other_line1 }
-  - Edit: user_expense_debt_other_line2
-    button: |
-      **Kind (continued)**:
-      ${ user_expense_debt_other_line2 }
   - Edit: user_expense_debt_other_amount
     button: |
       **Amount**:
@@ -1297,18 +1348,49 @@ attachments:
       - "docket_number__1": ${ docket_number }
       - "docket_number__2": ${ docket_number }
       - "user_name_full": ${ users[0] }
-      - "user_name_full__1": ${ users[0] }
+      - "signer_name_full": |
+          % if filing_basis != "filing_self":
+          ${ signer[0] }
+          % else:
+          ${ users[0] }
+          % endif
       - "user_birthdate": ${ users[0].birth_year }
       - "user_address_line_one": ${ users[0].address.line_one() }
       - "user_address_city_state_zip": ${ users[0].address.line_two() }
-      - "user_signature": ${ users[0].signature_if_final(i) }
-      - "user_email": ${ users[0].email }
+      - "signer_signature": |
+          % if filing_basis != "filing_self":
+          ${ signer[0].signature_if_final(i) }
+          % else:
+          ${ users[0].signature_if_final(i) }
+          % endif
+      - "signer_email": |
+          % if filing_basis != "filing_self":
+          ${ signer[0].email }
+          % else:
+          ${ users[0].email }
+          % endif
       - "signer_address_city_state_zip": |
+          % if filing_basis != "filing_self":
           ${ signer[0].address.line_two() }
+          % else:
+          ${ users[0].address.line_two() }
+          % endif
       - "signer_phone_number": |
-          ${ signer[0].phone_number }
+          % if filing_basis != "filing_self":
+          ${ signer[0].phone_numbers() }
+          % else:
+          ${ users[0].phone_numbers() }
+          % endif
       - "signer_address_line_one": |
+          % if filing_basis != "filing_self":
           ${ signer[0].address.line_one() }
+          % else:
+          ${ users[0].address.line_one() }
+          % endif
+      - "signer_attorney_number": |
+          % if filing_basis != "filing_self" and signer_attorney_number:          
+          ${ signer_attorney_number }
+          % endif
       - "user_dependents_adults": |
           % if user_has_dependents:
           ${ user_dependents_adults }
@@ -1317,10 +1399,10 @@ attachments:
           % if user_has_dependents:
           ${ user_dependents_children }
           % endif
-      - "user_receives_benefits_yes": ${ user_receives_benefits }
-      - "user_receives_benefits_no": ${ not user_receives_benefits }
-      #- "user_pending_benefits_yes": ${ user_pending_benefits }
-      #- "user_pending_benefits_no": ${ not user_pending_benefits }
+      - "user_receives_benefits_yes": ${ user_benefits.any_true() }
+      - "user_receives_benefits_no": ${ user_benefits.all_false() }
+      - "user_pending_benefits_yes": ${ user_applied_for_benefits.any_true() }
+      - "user_pending_benefits_no": ${ user_applied_for_benefits.all_false() }
       - "user_income_ss": |
           % if not user_income_none:
           ${ user_income_ss }
@@ -1373,9 +1455,9 @@ attachments:
           % if not user_income_none:
           ${ user_income_other }
           % endif
-      - "user_income_amount":  |
+      - "user_income_other_amount":  |
           % if not user_income_none:
-          ${ currency(user_income_amount) }
+          ${ currency(user_income_other_amount) }
           % endif
       - "user_income_other_kind":  |
           % if not user_income_none:
@@ -1455,8 +1537,8 @@ attachments:
       - "user_expense_rent_amount": ${ currency(user_expense_rent_amount) }
       - "user_expense_mortgage": ${ user_expense_mortgage }
       - "user_expense_mortgage_amount": ${ currency(user_expense_mortgage_amount) }
-      - "user_expense_mortgage_other": ${ user_expense_mortgage_other }
-      - "user_expense_mortgage_other_amount": ${ currency(user_expense_mortgage_other_amount) }
+      - "user_expense_other_mortgage": ${ user_expense_other_mortgage }
+      - "user_expense_other_mortgage_amount": ${ currency(user_expense_other_mortgage_amount) }
       - "user_expense_utilities": ${ user_expense_utilities }
       - "user_expense_utilities_amount": ${ currency(user_expense_utilities_amount) }
       - "user_expense_food": ${ user_expense_food }
@@ -1472,10 +1554,10 @@ attachments:
       - "user_expense_other": ${ user_expense_other }
       - "user_expense_other_line1": ${ user_expense_other_line1 }
       - "user_expense_other_amount": ${ currency(user_expense_other_amount) }
-      - "user_expense_other_line2": ${ user_expense_other_line2 }
+      # - "user_expense_other_line2": ${ user_expense_other_line2 }
       - "user_expense_debt_other": ${ user_expense_debt_other }
       - "user_expense_debt_other_line1": ${ user_expense_debt_other_line1 }
-      - "user_expense_debt_other_line2": ${ user_expense_debt_other_line2 }
+      #- "user_expense_debt_other_line2": ${ user_expense_debt_other_line2 }
       - "user_expense_debt_other_amount": ${ currency(user_expense_debt_other_amount) }
       - "user_expense_none": ${ user_expense_none }
       - "user_expense_total": ${ currency(user_expense_total) }
@@ -1500,8 +1582,8 @@ attachments:
       - "user_asset_other_kind": ${ user_asset_other_kind }
       - "user_asset_none": ${ user_asset_none }
       - "relationship_to_minor": |
-          % if filing_basis == "on_behalf_of":
+          % if filing_basis != "filing_self":
           ${ relationship_to_minor  }
           % endif
-      - "user_consents_email_notice": ${ user_consents_email_notice }
+      # - "user_consents_email_notice": ${ user_consents_email_notice }
       - "substantial_hardship_explanation": ${ substantial_hardship_explanation }
