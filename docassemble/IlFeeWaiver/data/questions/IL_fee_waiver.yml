@@ -3,6 +3,9 @@ include:
   - docassemble.AssemblyLine:al_package.yml
   - docassemble.ILAO:ilao-interview-framework.yml
 ---
+modules:
+  - docassemble.PovertyScale.poverty
+---
 code: |
     ilao_easy_form_url = "https://www.illinoislegalaid.org/"
     ilao_easy_form_title = "Illinois Fee Waiver"
@@ -120,7 +123,12 @@ code: |
     user_expense_none
     set_progress(22.22)
     ask_user_assets
+    # If something went wrong obtaining income limit, just skip this screen
+    # The error will get logged.
+    if not poverty_scale_get_income_limit(household_size=household_size, multiplier=1.25) is None:
+      show_qualification_guess
     substantial_hardship_explanation
+    
   user_ask_role    
   user_consents_email_notice
   trial_court.address.address
@@ -563,6 +571,70 @@ fields:
 #    user_asset_vehicle2 or
 #    user_asset_other):
 #    validation_error("You need to select one", field="user_asset_none")
+---
+code: |
+  if user_has_dependents:
+    household_size = 1 + user_dependents_adults + user_dependents_children
+    last_month_income_qualifies = poverty_scale_income_qualifies(user_income_total, household_size=household_size, multiplier=1.25)
+    last_year_income_qualifies = poverty_scale_income_qualifies(user_annual_total/12, household_size=household_size, multiplier=1.25)
+  else:
+    household_size = 1
+    last_month_income_qualifies = poverty_scale_income_qualifies(user_income_total, multiplier=1.25)
+    last_year_income_qualifies = poverty_scale_income_qualifies(user_annual_total/12, multiplier=1.25)    
+---
+id: show_qualification_guess
+continue button field: show_qualification_guess
+question: |
+  % if last_month_income_qualifies or last_year_income_qualifies:
+  You may qualify for a fee waiver
+  % else:
+  You likely do not qualify for a fee waiver
+  % endif
+subquestion: |
+  % if last_month_income_qualifies or last_year_income_qualifies:
+  #### Why we think that you qualify
+  % else:
+  #### Why we think that you do not qualify
+  % endif
+  
+  For your household size, your monthly income needs to be at or below 
+  ${ currency(poverty_scale_get_income_limit(household_size=household_size, multiplier=1.25)/12) }
+  
+  You said that your income over the last month was 
+  ${ currency(user_income_total) }.
+  
+  You said that your income over the last 12 months was 
+  ${ currency(user_annual_total) } (${ currency(user_annual_total/12) }
+  per month).
+  
+  #### A judge makes the final decision
+  This website cannot tell you if you qualify for sure. The judge will
+  consider all of the information you provided.
+  
+  ${ collapse_template(other_fee_waiver_considerations) }  
+
+---
+template: other_fee_waiver_considerations
+subject: |
+  What else the court will consider
+content: |  
+  The court will look at all of the information that you provided on this
+  form to decide if you qualify. For example, they will compare your
+  assets and expenses. They will also read any additional explanation that you
+  decide to provide.
+  
+  Some of your assets will not be counted. For example: the value of your car,
+  up to $2,400, is not counted. You can have up to $4,000 in other assets,
+  such as bank accoutns, that are not counted. The assets that are not
+  counted are set by law: specifically, 
+  [735 ILCS 5/12-901](https://www.ilga.gov/legislation/ilcs/fulltext.asp?DocName=073500050K12-1001)
+  and [735 ILCS 5/12-1001](https://www.ilga.gov/legislation/ilcs/fulltext.asp?DocName=073500050K12-901).
+  
+  
+  You may qualify for a partial reduction in your court fees even
+  if a judge decides that you do not qualify for a complete waiver.
+  
+  
 ---
 id: Who is filing this fee waiver
 question: |
