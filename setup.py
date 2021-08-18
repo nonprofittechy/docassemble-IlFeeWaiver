@@ -43,7 +43,7 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.IlFeeWaiver',
-      version='1.1.2',
+      version='1.1.3',
       description=('Application for Fee Waiver'),
       long_description='# docassemble.IlFeeWaiver\r\n\r\nApplication for Fee Waiver\r\n\r\n## Author\r\n\r\nauthor@example.com\r\n\r\n',
       long_description_content_type='text/markdown',
@@ -53,7 +53,7 @@ setup(name='docassemble.IlFeeWaiver',
       url='https://courtformsonline.org',
       packages=find_packages(),
       namespace_packages=['docassemble'],
-      install_requires=['docassemble.AssemblyLine>=2.3.1', 'docassemble.ILAO', 'docassemble.PovertyScale'],
+      install_requires=['docassemble.AssemblyLine>=2.3.1', 'docassemble.ILAO', 'docassemble.PovertyScale>=2021.1.3'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/IlFeeWaiver/', package='docassemble.IlFeeWaiver'),
      )

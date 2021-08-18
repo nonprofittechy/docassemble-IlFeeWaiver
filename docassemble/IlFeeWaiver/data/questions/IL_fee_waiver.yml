@@ -2,6 +2,7 @@
 include:
   - docassemble.AssemblyLine:al_package.yml
   - docassemble.ILAO:ilao-interview-framework.yml
+  - docassemble.ILAO:shared-basic-questions.yml
 ---
 modules:
   - docassemble.PovertyScale.poverty
@@ -157,7 +158,7 @@ comment: |
   Delete mandatory: True to include in another interview
 mandatory: True
 code: |
-  al_intro_screen
+  sees_nav_bar
   IL_fee_waiver_intro
   interview_order_IL_fee_waiver
   signature_date
@@ -167,6 +168,18 @@ code: |
   basic_questions_signature_flow
   users[0].signature
   IL_fee_waiver_download
+---
+id: welcome
+question: |
+  Fee Waiver
+subquestion: |
+  Welcome to Illinois Legal Aid Online's **Fee Waiver** Easy Form.
+  This program creates a form that asks the court to waive any fees
+  that you have in your case.
+  
+  Learn about [filing court papers for 
+  free](https://www.illinoislegalaid.org/legal-information/filing-court-papers-free).
+field: sees_nav_bar
 ---
 comment: |
   This question is used to introduce your interview. Please customize
