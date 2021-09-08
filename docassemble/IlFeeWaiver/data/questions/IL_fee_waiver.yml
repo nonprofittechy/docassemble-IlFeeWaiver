@@ -123,9 +123,9 @@ code: |
   # Below sets the user_role by asking a question.
   # You can set user_role directly instead to either 'plaintiff' or 'defendant'
   filing_basis
-  if filing_basis != "filing_self":
-    signer = users
+  if filing_basis == "filing_on_behalf_of":
     signer[0].email
+  users.gather()    
   if user_receives_benefits:
     user_qualifies_interstitial
   else:
@@ -151,8 +151,7 @@ code: |
   #defendants.gather()
   docket_number
   set_progress(44.44)
-  other_parties.gather()
-  users.gather()
+  other_parties.gather()  
   set_parts(subtitle=str(users))
   users[0].birth_year
   users[0].address.address
@@ -196,6 +195,20 @@ subquestion: |
   free](https://www.illinoislegalaid.org/legal-information/filing-court-papers-free).
 field: sees_nav_bar
 ---
+id: your name
+sets:
+    - users[0].name.first
+    - users[0].name.last
+question:  |
+  % if filing_basis == "filing_self":
+  What is your name?
+  % else:
+  ${ signer.familiar() }, who are you filing on behalf of?
+  % endif
+fields:
+  - code: |
+      users[0].name_fields()
+---
 comment: |
   This question is used to introduce your interview. Please customize
 id: Application_for_Fee_Waiver
@@ -210,9 +223,17 @@ subquestion: |
 ---
 id: Do you receive any benefits
 question: |
+  % if filing_basis == "filing_self":
   Do you **currently** receive any public benefits?
+  % else:
+  Does ${ users[0].familiar() } receive any public benefits?
+  % endif
 subquestion: |
+  % if filing_basis == "filing_self":
   Check any benefits that you currently receive.
+  % else:
+  Check any benefits that ${ users[0].familiar() } currently receives.
+  % endif
 fields:
   - no label: user_benefits
     datatype: checkboxes
@@ -228,10 +249,21 @@ fields:
 ---
 id: Did you apply for any benefits
 question: |
+  % if filing_basis == "filing_self":
   Have you applied and are waiting to learn if you receive any public benefits?
+  % else:
+  Has ${ users[0].familiar() } applied and is waiting to learn if
+  they receive any public benefits?
+  % endif 
 subquestion: |
+  % if filing_basis == "filing_self":
   Check any benefits that you have **applied** for but do not yet
   know if you will receive because your application is pending.
+  % else:
+  Check any benefits that **${ users[0].familiar() }** has **applied**
+  for but does not yet know if they will receive because their application
+  is pending.
+  % endif
 fields:
   - no label: user_applied_for_benefits
     datatype: checkboxes
@@ -248,16 +280,87 @@ fields:
 code: |
   user_receives_benefits = user_benefits.any_true()
 ---
+id: is the user the plaintiff or defendant?
+question: |
+  % if filing_basis == "filing_self":
+  Did you start this case, or are you responding to a case that someone else filed against you?
+  % else:
+  Did ${ users[0].familiar() } start this case, or did they respond to a case
+  that someone else filed?
+  % endif
+fields: 
+  - no label: user_ask_role
+    datatype: radio
+    choices:
+      - I started the case: plaintiff
+      - I am responding to a case filed against me: defendant
+    show if:
+      code: |
+        filing_basis == "filing_self"
+  - no label: user_ask_role
+    datatype: radio
+    choices:
+      - ${ users[0].familiar() } started the case: plaintiff
+      - ${ users[0].familiar() } responded to a case filed against them: defendant
+    show if:
+      code: |
+        filing_basis != "filing_self"
+  - note: |
+      % if filing_basis == "filing_self":
+      Okay, you are the **Plaintiff** or **Petitioner** in this case. The other 
+      side is the Defendant or Respondent.
+      % else:
+      Okay, ${ users[0].familiar() } is the **Plaintiff** or **Petitioner** in
+      this case. The other side is the Defendant or Respondent. 
+      % endif
+    show if:
+      variable: user_ask_role
+      is: "plaintiff"
+  - note: |
+      % if filing_basis == "filing_self":
+      Okay, you are the **Defendant** or **Respondent** in this case. The other 
+      side is the Plaintiff or Petitioner.
+      % else:
+      Okay, ${ users[0].familiar() } is the **Defendant** or **Respondent** in
+      this case. The other side is the Plaintiff or Petitioner.
+      % endif
+    show if:
+      variable: user_ask_role
+      is: "defendant"
+help:
+  label: |
+    How do I know?
+  content: |
+    If you are the first person to file a form in the case, you 
+    started the case. You are the **Plaintiff** or the **Petitioner.**
+
+    If you are responding to a case or court papers someone else filed, you
+    are the **Defendant** or the **Respondent.**
+---
 continue button field: user_qualifies_interstitial
 question: |
+  % if filing_basis == "filing_self":
   You qualify for a fee waiver
+  % else:
+  ${ users[0].familiar() } qualifies for a fee waiver.
+  % endif
 subquestion: |
+  % if filing_basis == "filing_self": 
   Because you currently receive public benefits, you qualify for a 
   100% waiver of fees for your civil case.
+  % else:
+  Because ${ users[0].familiar() } currently receives public benefits,
+  they qualify for a 100% waiver of fees in this civil case.
+  % endif
 ---
 id: How many dependents do you have
 question: |
+  % if filing_basis == "filing_self":
   Does anyone live with you that you support financially?  
+  % else:
+  Does anyone live with ${ users[0].familiar() } that they support
+  financially?
+  % endif
 fields:
   - I support someone who lives with me: user_has_dependents
     datatype: yesnoradio
@@ -272,9 +375,19 @@ fields:
 ---
 id: What income did you receive in the last month
 question: |
+  % if filing_basis == "filing_self":
   What income did you receive in the last month?
+  % else:
+  What income did ${ users[0].familiar() } receive in the last month?
+  % endif
 fields:
-  - "I do not have any income": user_income_none
+  - label: |
+      % if filing_basis == "filing_self":
+      I do not have any income
+      % else:
+      ${ users[0].familiar() } does not have any income
+      % endif
+    field: user_income_none
     datatype: yesno
     disable others: True
   - Money from a job or self-employment: user_income_employment
@@ -341,7 +454,11 @@ code: |
 ---
 id: What income did you receive in the last year
 question: |
+  % if filing_basis == "filing_self":
   What income did you get in the last 12 months?
+  % else:
+  What income did ${ users[0].familiar() } get in the last 12 months?
+  % endif
 subquestion: |
   We will use the information that you gave us about your income
   last month as a starting point. Look it over carefully and make
@@ -350,7 +467,13 @@ subquestion: |
   Write the actual amount you got over the last 12 months for each kind
   of income.
 fields:
-  - "No annual income": user_annual_none
+  - label: |
+      % if filing_basis == "filing_self":
+      I did not have any income in the last 12 months
+      % else:
+      ${ users[0].familiar() } did not have any income over the last 12 months
+      % endif
+    field: user_annual_none
     datatype: yesno
     disable others: True
   - Money from a job or self-employment: user_annual_employment
@@ -449,11 +572,21 @@ code: |
 ---
 id: What expenses do you have right now
 question: |
+  % if filing_basis == "filing_self":
   What expenses do you have right now?
+  % else:
+  What expenses does ${ users[0].familiar() } have right now?
+  % endif
 subquestion: |
-  Write the amount that each expense costs you each month.
+  Write the amount that each expenses costs **per month**.
 fields:
-  - "I have no expenses": user_expense_none
+  - label: |
+      % if filing_basis == "filing_self":
+      I do not have any expenses
+      % else:
+      ${ users[0].familiar() } does not have any expenses
+      % endif
+    field: user_expense_none
     datatype: yesno
     disable others: True
   - "Rent": user_expense_rent
@@ -551,7 +684,11 @@ code: |
 continue button field: ask_user_assets  
 id: What assets do you have
 question: |
+  % if filing_basis == "filing_self":
   What assets do you have?
+  % else:
+  What assets does ${ users[0].familiar() } have?
+  % endif
 fields:
   - "No assets": user_asset_none
     datatype: yesno
@@ -649,15 +786,31 @@ id: show_qualification_guess
 continue button field: show_qualification_guess
 question: |
   % if last_month_income_qualifies or last_year_income_qualifies:
+  % if filing_basis == "filing_self":
   You may qualify for a fee waiver
   % else:
+  ${ users[0].familiar() } may qualify for a fee waiver
+  % endif
+  % else:
+  % if filing_basis == "filing_self":
   You likely do not qualify for a fee waiver
+  % else:
+  ${ users[0].familiar() } likely does not qualify for a fee waiver
+  % endif
   % endif
 subquestion: |
   % if last_month_income_qualifies or last_year_income_qualifies:
+  % if filing_basis == "filing_self":  
   #### Why we think that you qualify
   % else:
+  #### Why we think ${ users[0].familiar() } qualifies
+  % endif
+  % else:
+  % if filing_basis == "filing_self":
   #### Why we think that you do not qualify
+  % else:
+  #### Why we think ${ users[0].familiar() } does not qualify
+  % endif
   % endif
   
   The judge will consider your income, assets, and expenses. Our prediction
@@ -758,24 +911,38 @@ yesno: user_consents_email_notice
 ---
 id: birth year
 question: |
+  % if filing_basis == "filing_self":
   What year were you born?
+  % else:
+  What year was ${ users[0].familiar() } born?
+  % endif
 fields:
   - Year of birth: users[0].birth_year
     input type: combobox
     datatype: integer
     maxlength: 4
     code: |
-      reversed(range(today().year-120, today().year))
+      reversed(range(today().year-120, today().year+1))
 ---
 id: your contact information
 question: |
+  % if filing_basis == "filing_self":
   What is your contact information?
+  % else:
+  What is ${ users[0].familiar() }'s contact information?
+  % endif
 fields:  
   - Mobile number: users[0].mobile_number
     required: False
   - Other phone number: users[0].phone_number
     required: False
-  - I have an email address: users[0].has_email_address
+  - label: |
+      % if filing_basis == "filing_self":
+      I have an email address
+      % else:
+      ${ users[0].familiar() } has an email address
+      % endif
+    field: users[0].has_email_address      
     datatype: yesnoradio
   - note: |
       This email address will appear on your court forms. Be sure to check 
@@ -792,7 +959,6 @@ validation code: |
       (not showifdef('users[0].mobile_number')) and \
       (not showifdef('users[0].email'))):
     validation_error(word("You need to provide at least one contact method."), field="users[0].other_contact_method")
-# TODO: adjust this if the form is not a court form
 help: |
   % if al_form_type in ['starts_case','existing_case','appeal']:
   The court **must** be able to reach you. So you have to give them some way to do this.
@@ -807,11 +973,20 @@ help: |
 ---
 id: substantial hardship
 question: |
+  % if filing_basis == "filing_self":
   Will you face substantial hardship if you do not get a fee waiver?
+  % else:
+  Will ${ users[0].familiar() } face substantial hardship if they do not
+  get a fee waiver?
+  % endif
 subquestion: |
+  % if filing_basis == "filing_self":
   If you want to explain to a judge why you would be harmed if you do not
   get a fee waiver, you can explain it here.
-  
+  % else:
+  If you want to explain to a judge why ${ users[0].familiar() } would be 
+  harmed if they do not get a fee waiver, you can explain it here.  
+  % endif
   Complete the sentence below:
 fields:
   - label: |
@@ -822,6 +997,29 @@ fields:
     rows: 4
     maxlength: 640
     required: False
+---
+id: your address
+sets:
+  - users[0].address.address
+  - users[0].address.city
+  - users[0].address.zip
+question: |
+  % if filing_basis == "filing_self":
+  What is your address?
+  % else:
+  What is ${ users[0].familiar() }'s address?
+  % endif
+fields:
+  - Street address: users[0].address.address
+    address autocomplete: True
+  - Address line 2: users[0].address.unit
+    required: False
+  - City: users[0].address.city
+  - State: users[0].address.state
+    code: |
+      states_list()
+    default: IL      
+  - ZIP code: users[0].address.zip    
 ---
 id: signature choice
 decoration: file-signature
