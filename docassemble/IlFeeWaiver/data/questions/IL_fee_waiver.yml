@@ -868,8 +868,7 @@ fields:
       - For myself: filing_self
       - On behalf of a minor (someone under 18) or an incompetent adult: filing_on_behalf_of      
   - note: |
-      **Okay**. List **your** name below. Fill in the rest of the information on
-      this website as if you are the person who you are helping. 
+      **Okay**. List **your** name below. 
     show if: 
       variable: filing_basis
       is: filing_on_behalf_of      
