@@ -159,7 +159,7 @@ code: |
   set_progress(55.56)
   users[0].address.address
   if filing_basis == "filing_self":
-    users[0].email
+    users[0].does_not_have_email
   if filing_basis != "filing_self":
     signer[0].address.address
     set_progress(66.67)
@@ -767,6 +767,37 @@ fields:
     code: |
       reversed(range(today().year-120, today().year))
 ---
+id: your contact information
+question: |
+  What is your contact information?
+fields:  
+  - Mobile number: users[0].mobile_number
+    required: False
+  - Other phone number: users[0].phone_number
+    required: False
+  - I do not have an email address: users[0].does_not_have_email    
+    datatype: yesno
+  - Email address: users[0].email    
+    datatype: email
+    hide if: users[0].does_not_have_email
+validation code: |
+  if (not showifdef('users[0].phone_number') and \
+      (not showifdef('users[0].mobile_number')) and \
+      (not showifdef('users[0].email'))):
+    validation_error(word("You need to provide at least one contact method."), field="users[0].other_contact_method")
+# TODO: adjust this if the form is not a court form
+help: |
+  % if al_form_type in ['starts_case','existing_case','appeal']:
+  The court **must** be able to reach you. So you have to give them some way to do this.
+  
+  Some forms allow you to tell the court you need to keep your address, phone,
+  and email confidential, so that only court staff can see this information. 
+  % else:
+  It is important that the person or organization you deliver this form to
+  is able to contact you. Make sure to include at least one way to reach you
+  other than mail.
+  % endif
+---
 id: substantial hardship
 question: |
   Will you face substantial hardship if you do not get a fee waiver?
@@ -784,22 +815,6 @@ fields:
     rows: 4
     maxlength: 640
     required: False
----
-id: preview IL_fee_waiver
-question: |
-  Preview your form before you sign it
-subquestion: |
-  Here is a preview of the form you will sign on the next page.   
-  
-  ${ al_court_bundle.as_pdf(key='preview') }
-
-  Click the image to open it in a new tab. Click the "Make changes" button
-  to edit your answers.
-
-  ${ action_button_html(url_action('review_IL_fee_waiver'), label='Make changes', color='info') }
-  
-  Remember to come back to this window to continue and sign your form.
-continue button field: IL_fee_waiver_preview_question   
 ---
 id: signature choice
 decoration: file-signature
@@ -1400,7 +1415,7 @@ attachments:
       - "signer_email": |
           % if filing_basis != "filing_self":
           ${ signer[0].email }
-          % else:
+          % elif not users[0].does_not_have_email:
           ${ users[0].email }
           % endif
       - "signer_address_city_state_zip": |
