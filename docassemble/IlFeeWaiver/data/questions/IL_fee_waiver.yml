@@ -179,9 +179,9 @@ code: |
   signature_date
   # Save anonymized interview statistics (customize the saved data below)
   store_variables_snapshot(data={'zip': users[0].address.zip})
-  IL_fee_waiver_preview_question
+  # IL_fee_waiver_preview_question
   basic_questions_signature_flow
-  users[0].signature
+  # users[0].signature
   IL_fee_waiver_download
 ---
 id: welcome
@@ -799,7 +799,31 @@ subquestion: |
   ${ action_button_html(url_action('review_IL_fee_waiver'), label='Make changes', color='info') }
   
   Remember to come back to this window to continue and sign your form.
-continue button field: IL_fee_waiver_preview_question    
+continue button field: IL_fee_waiver_preview_question   
+---
+id: signature choice
+decoration: file-signature
+question: |
+  Sign your forms
+subquestion: |
+  Your forms are almost ready. You need to sign them first.
+  
+  Use the mouse or touchpad on your computer or
+  sign with your finger on a smartphone.
+field: signature_choice
+buttons:  
+  - Sign on my phone: phone
+    image: mobile-alt
+  - Sign on this computer: this device
+    image: desktop
+  - Just print my name: slash_s
+    image: keyboard
+continue button field: saw_signature_choice
+script: |
+  <script>
+    $(".da-field-buttons > div > .btn-da-custom").last().after("<br>")
+    $(".da-field-buttons > div > .btn-da-custom").first().before("<br>")
+  </script>
 ---
 code: |
   signature_fields = ['users[0].signature']
@@ -1358,10 +1382,20 @@ attachments:
       - "user_address_line_one": ${ users[0].address.line_one() }
       - "user_address_city_state_zip": ${ users[0].address.line_two() }
       - "signer_signature": |
+          % if signature_choice != "slash_s":
           % if filing_basis != "filing_self":
           ${ signer[0].signature_if_final(i) }
           % else:
           ${ users[0].signature_if_final(i) }
+          % endif
+          % endif
+      - "signer_signature_slash_s": |
+          % if signature_choice == "slash_s":
+          % if filing_basis != "filing_self":          
+          ${ signer[0].name.full() }
+          % else:
+          ${ users[0].name.full() }
+          % endif
           % endif
       - "signer_email": |
           % if filing_basis != "filing_self":

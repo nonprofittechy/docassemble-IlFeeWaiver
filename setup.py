@@ -53,7 +53,7 @@ setup(name='docassemble.IlFeeWaiver',
       url='https://courtformsonline.org',
       packages=find_packages(),
       namespace_packages=['docassemble'],
-      install_requires=['docassemble.AssemblyLine>=2.3.1', 'docassemble.ILAO', 'docassemble.PovertyScale>=2021.1.3'],
+      install_requires=['docassemble.AssemblyLine>=2.3.4', 'docassemble.ILAO', 'docassemble.PovertyScale>=2021.1.3'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/IlFeeWaiver/', package='docassemble.IlFeeWaiver'),
      )
