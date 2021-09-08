@@ -159,7 +159,7 @@ code: |
   set_progress(55.56)
   users[0].address.address
   if filing_basis == "filing_self":
-    users[0].does_not_have_email
+    users[0].has_email_address
   if filing_basis != "filing_self":
     signer[0].address.address
     set_progress(66.67)
@@ -775,11 +775,18 @@ fields:
     required: False
   - Other phone number: users[0].phone_number
     required: False
-  - I do not have an email address: users[0].does_not_have_email    
-    datatype: yesno
+  - I have an email address: users[0].has_email_address
+    datatype: yesnoradio
+  - note: |
+      This email address will appear on your court forms. Be sure to check 
+      this email daily, otherwise you may miss important information about 
+      your case.
+    show if: users[0].has_email_address      
   - Email address: users[0].email    
     datatype: email
-    hide if: users[0].does_not_have_email
+    hide if: 
+      variable: users[0].has_email_address
+      is: False
 validation code: |
   if (not showifdef('users[0].phone_number') and \
       (not showifdef('users[0].mobile_number')) and \
@@ -1415,7 +1422,7 @@ attachments:
       - "signer_email": |
           % if filing_basis != "filing_self":
           ${ signer[0].email }
-          % elif not users[0].does_not_have_email:
+          % elif users[0].has_email_address:
           ${ users[0].email }
           % endif
       - "signer_address_city_state_zip": |
