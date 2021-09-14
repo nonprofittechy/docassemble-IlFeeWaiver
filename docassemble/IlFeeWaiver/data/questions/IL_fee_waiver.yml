@@ -1552,18 +1552,18 @@ progress: 100
 css: ${ docs_list_css() }
 ---
 objects:
-  - Post_interview_instructions: ALDocument.using(title="Instructions", filename="IL_fee_waiver_next_steps.docx", enabled=True, has_addendum=False)
+  - IL_fee_waiver_Post_interview_instructions: ALDocument.using(title="Instructions", filename="IL_fee_waiver_next_steps.docx", enabled=True, has_addendum=False)
   - IL_fee_waiver_attachment: ALDocument.using(title="Fee Waiver Application", filename="FeeWaiver_Civil_Application.pdf", enabled=True, has_addendum=False)
   - IL_fee_waiver_order: ALDocument.using(title="Fee Waiver Order", filename="FeeWaiver_Civil_Order.pdf", enabled=True, has_addendum=False)
 ---
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[Post_interview_instructions,IL_fee_waiver_attachment, IL_fee_waiver_order], filename="IL_fee_waiver_package.pdf", title="All forms to download for your records")
+  - al_user_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_Post_interview_instructions,IL_fee_waiver_attachment, IL_fee_waiver_order], filename="IL_fee_waiver_package.pdf", title="All forms to download for your records")
   - al_court_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment, IL_fee_waiver_order], filename="IL_fee_waiver_package.pdf", title="All forms to download for your records")
 ---
 attachments:
   - name: Post interview instructions
     filename: Post-interview-instructions     
-    variable name: Post_interview_instructions[i]        
+    variable name: IL_fee_waiver_Post_interview_instructions[i]        
     docx template file: IL_fee_waiver_next_steps.docx
   - name: IL fee waiver order   
     filename: IL_fee_waiver_order
