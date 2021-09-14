@@ -103,7 +103,7 @@ code: |
 ---
 objects:
   - signer: ALPeopleList.using(ask_number=True,target_number=1)
-  - users: ALPeopleList.using(ask_number=True,target_number=1)
+  - users: ALPeopleList # .using(ask_number=True,target_number=1)
   - court_list: ALCourtLoader.using(file_name='docassemble.ILAO:data/sources/il_courts.xlsx')
   - court_emails: DAEmpty #dummy variable definition  
 ---
