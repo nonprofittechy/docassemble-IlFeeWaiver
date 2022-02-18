@@ -141,15 +141,15 @@ code: |
       show_qualification_guess
   substantial_hardship_explanation
     
-  user_ask_role    
+  user_ask_role
   users.gather()
   other_parties.gather()  
   # user_consents_email_notice
   set_progress(33.33)
   trial_court.address.address
   docket_number
-  # plaintiffs.gather()
-  #defendants.gather()
+  plaintiffs
+  defendants
   set_progress(44.44)
   set_parts(subtitle=str(users))
   users[0].birth_year
