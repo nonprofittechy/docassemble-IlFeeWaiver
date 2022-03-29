@@ -24,6 +24,7 @@ include:
 modules:
   - docassemble.PovertyScale.poverty
 ---
+mandatory: True
 code: |
     ilao_easy_form_url = "https://www.illinoislegalaid.org/legal-information/fee-waiver"
     ilao_easy_form_title = "Fee Waiver"
@@ -141,15 +142,15 @@ code: |
       show_qualification_guess
   substantial_hardship_explanation
     
-  user_ask_role    
+  user_ask_role
   users.gather()
   other_parties.gather()  
   # user_consents_email_notice
   set_progress(33.33)
   trial_court.address.address
   docket_number
-  # plaintiffs.gather()
-  #defendants.gather()
+  plaintiffs
+  defendants
   set_progress(44.44)
   set_parts(subtitle=str(users))
   users[0].birth_year
@@ -1096,7 +1097,7 @@ question: |
   % endif
 subquestion: |
   % if len(users.elements) > 1:  
-  So far you have told us about ${comma_and_list(users.complete_elements())}.
+  So far you have told us about ${comma_and_list(users.complete_elements().full_names())}.
   % endif  
 yesno: users.there_is_another 
 ---
@@ -1117,9 +1118,17 @@ question: |
     What is the name of the ${ ordinal(i) } person who is adding their name to this form with ${ users[0].familiar() }?
     % endif
   % endif
+subquestion: |
+  ${ collapse_template(long_name_help) }
 fields:
   - code: |
       users[i].name_fields(person_or_business='unsure')
+---
+template: long_name_help
+subject: |
+  **What if the person's name doesn't fit into 4 fields?**
+content: |
+  If the party has a long name like "Jane Smith, Director of Housing," select **Business or organization**. You can then enter the full name and title.
 ---
 id: is there an opposing party?
 question: |
@@ -1144,15 +1153,34 @@ yesno: other_parties.there_are_any
 id: any other opposing parties
 question: |
   % if users==plaintiffs:
-  Is there another **defendant** or **respondent** in this matter?
+  Is there another **defendant** or **respondent** in this case?
   % else:
-  Is there another **plaintiff** or **petitioner** in this matter?
+  Is there another **plaintiff** or **petitioner** in this case?
   % endif
 subquestion: |
   % if len(other_parties.elements) >= 1:  
-  So far you have told us about ${comma_and_list(other_parties.complete_elements())}.
+  So far you have told us about ${comma_and_list(other_parties.complete_elements().full_names())}.
   % endif
 yesno: other_parties.there_is_another
+---
+id: names of opposing parties
+sets:
+  - other_parties[i].name.first
+  - other_parties[i].name.last
+  - other_parties[i].name.middle
+  - other_parties[i].name.suffix
+question: |
+  % if users==plaintiffs:
+  What is the name of the ${ ordinal(i) } **defendant** or **respondent** in this
+  case?
+  % else:
+  What is the name of the ${ ordinal(i) } **plaintiff** or **petitioner** in this case?
+  % endif
+subquestion: |
+  ${ collapse_template(long_name_help) }
+fields:
+  - code: |
+      other_parties[i].name_fields(person_or_business='unsure')
 ---
 id: address
 #generic object: ALIndividual
@@ -1224,7 +1252,7 @@ subquestion: |
   
   * Sign with your finger on a smartphone,
   * Sign with the mouse or touchpad on your computer,
-  * Add your name as an e-signature **(recommended in Illinois)**, or
+  * Add your name as an e-signature **(recommended)**, or
   * Sign the forms by hand after you download and print.
 field: signature_choice
 buttons:  
@@ -1273,14 +1301,14 @@ review:
       **Plaintiffs / Petitioners**
 
       % for item in plaintiffs:
-        * ${ item }
+        * ${ item.name.full(middle="full") }
       % endfor
   - Edit: defendants.revisit
     button: |
       **Defendants / Respondents**
 
       % for item in defendants:
-        * ${ item }
+        * ${ item.name.full(middle="full") }
       % endfor
   - Edit: 
       - trial_court_index
@@ -1691,20 +1719,35 @@ review:
       % else:
       ${ users[0].email }      
       % endif
-# add below 3 buttons back after fix
-  #- Edit: signature_choice
-  #  button: |
-  #    **Signature choice**:
-  #    ${ signature_choice }      
-  #- Edit: users[0].signature
-  #  button: |
-  #    **Signature**:
-  #    ${ users[0].signature }      
-  #- Edit: signer[0].signature
-  #  button: |
-  #    **Signature**:
-  #    ${ signer[0].signature }      
-# add above 3 buttons back after fix
+  - Edit: 
+    - signature_choice
+    - recompute:
+          - basic_questions_signature_flow
+    button: |
+      **Signature choice**:
+      % if (signature_choice == "phone") or (signature_choice == "this device"):
+      ${ signature_choice.capitalize() }      
+      % elif signature_choice == "add name":
+      % if filing_basis == "filing_self":
+      ${ "Add /s/ " + users[0].name.full(middle="full") }
+      % else:
+      ${ "Add /s/ " + signer[0].name.full(middle="full") }
+      % endif
+      % elif signature_choice == "no signature":
+      ${ "Leave blank and sign later" }
+      % endif
+      
+#  - Edit: users[0].signature
+#    label: Edit
+#    fields:
+#      - recompute:
+#          - users[0].signature
+#    button: |
+#      **Signature**:
+#      ${ users[0].signature }      
+#      
+# added above 3 buttons back after fix
+
   #- Edit: users.revisit
   #  button: |
   #    **users**
@@ -1982,8 +2025,8 @@ attachments:
     editable: False
     fields:
       - "trial_court_county": ${ trial_court.address.county }
-      - "plaintiff": ${ plaintiffs }
-      - "defendant": ${ defendants }
+      - "plaintiff": ${ plaintiffs.full_names() }
+      - "defendant": ${ defendants.full_names() }
       - "docket_number": ${ docket_number }
       - "docket_number__1": ${ docket_number }
       - "user_name_full": ${ users[0] }
@@ -1995,8 +2038,8 @@ attachments:
     pdf template file: winnebago_supplement.pdf
     editable: False
     fields:
-      - "plaintiff": ${ plaintiffs }
-      - "defendant": ${ defendants }
+      - "plaintiff": ${ plaintiffs.full_names() }
+      - "defendant": ${ defendants.full_names() }
       - "docket_number": ${ docket_number }
       - "signer_name_full": |
           % if filing_basis != "filing_self":
@@ -2035,8 +2078,8 @@ attachments:
     editable: False
     fields:
       - "trial_court_county": ${ trial_court.address.county }
-      - "plaintiff": ${ plaintiffs }
-      - "defendant": ${ defendants }
+      - "plaintiff": ${ plaintiffs.full_names() }
+      - "defendant": ${ defendants.full_names() }
       - "docket_number": ${ docket_number }
       - "docket_number__1": ${ docket_number }
       - "docket_number__2": ${ docket_number }
@@ -2052,12 +2095,14 @@ attachments:
       - "user_address_city_state_zip": ${ users[0].address.line_two() }
       - "signer_signature": |
           % if signature_choice == "phone" or signature_choice == "this device": 
-          % if filing_basis != "filing_self":
-          ${ users[0].signature_if_final(i) }
-          % else:
           ${ users[0].signature_if_final(i) }
           % endif
-          % endif
+          # removed this duplicative logic since variable is the same in either 
+          #% if filing_basis != "filing_self":
+          #${ users[0].signature_if_final(i) }
+          #% else:
+          #${ users[0].signature_if_final(i) }
+          #% endif
       - "signer_signature_slash_s": |
           % if signature_choice == "add name":
           % if filing_basis != "filing_self":          
