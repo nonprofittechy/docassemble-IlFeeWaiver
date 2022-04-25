@@ -32,12 +32,6 @@ code: |
 code: |
   github_repo_name = "docassemble-IlFeeWaiver"
 ---
-#default screen parts:
-#  footer: |
-#    [:share-alt-square: Share](${ url_ask([{'undefine': ['al_sharing_type','al_how_share_link']}, 'al_share_form_screen', {'recompute': ['al_did_share_form']}, 'al_share_results']) })
-#    [:info-circle: About](${ url_action('about_this_interview') })
-#    [:comment-dots: Feedback](${ interview_url(i=feedback_form, github_repo=github_repo_name, github_user=github_user, variable=user_info().variable, question_id=user_info().question_id, package_version=package_version_number, local=False,reset=1) } ){:target="_blank"}    
----
 mandatory: True
 comment: |
   This contains metadata that will not be overwritten if this YAML file is included in another file. Each file gets its own key in the interview_metadata dictionary.
@@ -1231,6 +1225,8 @@ question: |
   What is ${ your_or_obo_possessive } case number?
 subquestion: |
   The case number will be listed on ${ your_or_obo_possessive } court papers. The Circuit Clerk gives each case a number when it is filed. If nothing has been filed yet, check the box.
+
+  ${ collapse_template(case_number_help) }  
 fields:
   - I don't know the case number: dont_know_docket_number
     datatype: yesno    
@@ -1240,6 +1236,18 @@ validation code: |
   # This should be safe to 
   if dont_know_docket_number:
     docket_number = ''      
+---
+template: case_number_help
+subject: |
+  **Where can I find this?**
+content: |  
+  The case number should be on your court papers. Look at the Complaint or Petition, or the Summons if you received one. It is usually in the top-right part of the first page.
+  
+  If you started the case, the court clerk should have given you the case number.
+  
+  In this example, the case number is **2022 EXAMPLE 123**.
+  
+  [FILE case_number_example.png, 100%, Summons form showing case number]
 ---
 id: signature choice
 decoration: file-signature
