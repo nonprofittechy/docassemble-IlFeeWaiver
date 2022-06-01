@@ -1,5 +1,7 @@
 include:
   - docassemble.AssemblyLine:al_package.yml
+  - docassemble.EFSPIntegration:efiling_integration.yml
+  - docassemble.EFSPIntegration:codes_helper.yml
   - docassemble.ILAO:ilao-interview-framework.yml
   - docassemble.ILAO:shared-basic-questions.yml
 ---
@@ -1771,6 +1773,36 @@ objects:
 #  - IL_fee_waiver_attachment: ALDocument.using(title="Fee Waiver Application", filename="FeeWaiver_Civil_Application.pdf", has_addendum=False)
 #  - IL_fee_waiver_supplement: ALDocument.using(title="Winnebago Supplement", filename="winnebago_supplement.pdf", has_addendum=False)
 #  - IL_fee_waiver_order: ALDocument.using(title="Fee Waiver Order", filename="FeeWaiver_Civil_Order.pdf", has_addendum=False)
+---
+objects:
+  - IL_fee_waiver_package: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment, IL_fee_waiver_supplement, IL_fee_waiver_order], title="Fee Waiver Package", filename="Fee_waiver_package.pdf", enabled=True)
+---
+code: |
+  if can_check_efile:
+    choosable_filing_types = filter(lambda ft: "Waiver" in ft[1], filing_type_options)
+    if not choosable_filing_types:
+      no_filing_types_screen
+    elif len(choosable_filing_types) == 1:
+      IL_fee_waiver_package.tyler_filing_type = choosable_filing_types[0][0]
+    else:
+      IL_fee_waiver_package.tyler_filing_type
+---
+id: filing type et al.
+question: |
+  What filing code should be used?
+subquestion: |
+  We found a few filing codes that could be used to file your fee waiver. Choose the one that you think best fits your case.
+fields:
+  - Filing Type: IL_fee_waiver_package.tyler_filing_type
+    datatype: dropdown
+    code: |
+      choosable_filing_types
+---
+event: no_filing_types_screen
+question: |
+  You cannot file a Fee Waiver into this case
+subquestion: |
+  It doesn't look like the court allows you to file a fee waiver into this case. If you have any questions, contact the court.
 ---
 code: |
   IL_fee_waiver_Post_interview_instructions.enabled = False
