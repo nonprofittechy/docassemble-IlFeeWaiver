@@ -17,7 +17,11 @@ metadata:
     - RI-10-00-00-00
 ---
 include:
+  - docassemble.EFSPIntegration:login_qs.yml
   - IL_fee_waiver_body.yml
+---
+code: |
+  proxy_conn = ProxyConnection(credentials_code_block='tyler_login', default_jurisdiction='illinois')
 ---
 mandatory: True
 code: |
@@ -52,7 +56,13 @@ code: |
   whats_next
   if accept == False:
     not_legal_advice
+  if can_check_efile:
+    tyler_login
+    lead_contact = users[0]
+  
   interview_order_IL_fee_waiver
+  tyler_payment_id = get_config('efile proxy', {}).get('global waiver', '')
+  ready_to_efile
   signature_date
   # Save anonymized interview statistics (customize the saved data below)
   store_variables_snapshot(data={'zip': users[0].address.zip})
@@ -267,5 +277,5 @@ under: |
   ${ action_button_html(interview_url(i="docassemble.ILAO:feedback.yml", easy_form_interview=ilao_easy_form_url, easy_form_title=ilao_easy_form_title, easy_form_page=user_info().question_id, easy_form_variable=user_info().variable, local=False,reset=1), label=':comment: Was this program helpful?', color='info', size="md", new_window=True) }
 ---
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_Post_interview_instructions, IL_fee_waiver_attachment, IL_fee_waiver_supplement, IL_fee_waiver_order], filename="IL_fee_waiver_package.pdf", title="Download all forms")
-  - al_court_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment, IL_fee_waiver_supplement, IL_fee_waiver_order], filename="IL_fee_waiver_package.pdf", title="Download all forms")
+  - al_user_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_Post_interview_instructions, IL_fee_waiver_package], filename="IL_fee_waiver_user_package.pdf", title="Download all forms")
+  - al_court_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_package], filename="IL_fee_waiver_court_package.pdf", title="Download all forms")

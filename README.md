@@ -4,5 +4,7 @@ Application for Fee Waiver
 
 ## Author
 
-author@example.com
+Quinten Steenhuis / Matt Newsted
+
+qsteenhuis@suffolk.edu, mnewsted@illinoislegalaid.org
 
