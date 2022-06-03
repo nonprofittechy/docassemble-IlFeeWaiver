@@ -1779,7 +1779,7 @@ objects:
 ---
 code: |
   if can_check_efile:
-    choosable_filing_types = filter(lambda ft: "Waiver" in ft[1], filing_type_options)
+    choosable_filing_types = [ft for ft in filing_type_options if "Waiver" in ft[1]]
     if not choosable_filing_types:
       no_filing_types_screen
     elif len(choosable_filing_types) == 1:
@@ -1822,14 +1822,14 @@ code: |
 ---
 attachments:
   - name: Post interview instructions
-    filename: Fee-waiver-instructions     
-    variable name: IL_fee_waiver_Post_interview_instructions[i]        
+    filename: Fee-waiver-instructions
+    variable name: IL_fee_waiver_Post_interview_instructions[i]
     pdf template file: il_fee_waiver_instructions.pdf
     editable: False
     fields:
         - "fake": ${ "" }
         
-  - name: IL fee waiver order   
+  - name: IL fee waiver order
     filename: IL_fee_waiver_order
     variable name: IL_fee_waiver_order[i]
     skip undefined: True
@@ -1844,8 +1844,8 @@ attachments:
       - "user_name_full": ${ users[0] }
 
   - name: IL fee waiver supplement
-    filename: winnebago_supplement     
-    variable name: IL_fee_waiver_supplement[i]        
+    filename: winnebago_supplement
+    variable name: IL_fee_waiver_supplement[i]
     skip undefined: True
     pdf template file: winnebago_supplement.pdf
     editable: False
@@ -1875,7 +1875,7 @@ attachments:
           % endif
       - "signer_signature_slash_s": |
           % if signature_choice == "add name":
-          % if filing_basis != "filing_self":          
+          % if filing_basis != "filing_self":
           ${ "/s/ " + signer[0].name.full(middle="full") }
           % else:
           ${ "/s/ " + users[0].name.full(middle="full") }
@@ -1883,8 +1883,8 @@ attachments:
           % endif
           
   - name: IL fee waiver petition
-    filename: IL_fee_waiver     
-    variable name: IL_fee_waiver_attachment[i]        
+    filename: IL_fee_waiver
+    variable name: IL_fee_waiver_attachment[i]
     skip undefined: True
     pdf template file: FeeWaiver_Civil_Application.pdf
     editable: False
