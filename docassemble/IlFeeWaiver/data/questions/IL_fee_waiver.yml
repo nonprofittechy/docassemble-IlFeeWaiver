@@ -17,11 +17,10 @@ metadata:
     - RI-10-00-00-00
 ---
 include:
-  - docassemble.EFSPIntegration:login_qs.yml
   - IL_fee_waiver_body.yml
 ---
 code: |
-  proxy_conn = ProxyConnection(credentials_code_block='tyler_login', default_jurisdiction='illinois')
+  proxy_conn = DAEmpty()
 ---
 mandatory: True
 code: |
@@ -47,7 +46,6 @@ sections:
 ###################### Main order ######################
 comment: |
   This block includes the logic for standalone interviews.
-  Delete mandatory: True to include in another interview
 mandatory: True
 code: |
   sees_nav_bar
@@ -56,13 +54,10 @@ code: |
   whats_next
   if accept == False:
     not_legal_advice
-  if can_check_efile:
-    tyler_login
-    lead_contact = users[0]
-  
+  # Not going to allow e-filing from Fee Waiver standalone for now.
+  user_wants_efile = False
+
   interview_order_IL_fee_waiver
-  tyler_payment_id = get_config('efile proxy', {}).get('global waiver', '')
-  ready_to_efile
   signature_date
   # Save anonymized interview statistics (customize the saved data below)
   store_variables_snapshot(data={'zip': users[0].address.zip})
