@@ -87,8 +87,6 @@ code: |
   # Set the allowed courts for this interview
   allowed_courts = interview_metadata["IL_fee_waiver"]["allowed courts"]
   nav.set_section('review_IL_fee_waiver')
-  # Below sets the user_role by asking a question.
-  # You can set user_role directly instead to either 'plaintiff' or 'defendant'
   filing_basis
   #if filing_basis == "filing_on_behalf_of":
   # users.gather() moved to after user_ask_role    
@@ -108,7 +106,10 @@ code: |
     if not poverty_scale_get_income_limit(household_size=household_size, multiplier=1.25) is None:
       show_qualification_guess
   substantial_hardship_explanation
-    
+  qualify_for_waiver
+
+  # Below sets the user_role by asking a question.
+  # You can set user_role directly instead to either 'plaintiff' or 'defendant'
   user_ask_role
   users.gather()
   other_parties.gather()  
@@ -131,6 +132,15 @@ code: |
     set_progress(66.67)
     signer[0].has_email_address
   interview_order_IL_fee_waiver = True
+---
+sets: qualify_for_waiver
+code: |
+  if user_receives_benefits:
+    qualify_for_waiver = 'yes'
+  elif not poverty_scale_get_income_limit(household_size=household_size, multiplier=1.25) is None:
+    qualify_for_waiver = 'likely' if last_month_income_qualifies or last_year_income_qualifies else 'unlikely'
+  else:
+    qualify_for_waiver = 'cannot-check'
 ---
 id: your name
 sets:
@@ -1917,7 +1927,7 @@ attachments:
           #% endif
       - "signer_signature_slash_s": |
           % if signature_choice == "add name":
-          % if filing_basis != "filing_self":          
+          % if filing_basis != "filing_self":
           ${ signer[0].name.full(middle="full") }
           % else:
           ${ users[0].name.full(middle="full") }
