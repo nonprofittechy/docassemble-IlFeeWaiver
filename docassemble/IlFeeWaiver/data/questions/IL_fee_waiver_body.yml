@@ -1775,7 +1775,7 @@ edit:
 confirm: True
 ---
 objects:
-  - IL_fee_waiver_Post_interview_instructions: ALDocument.using(title="Instructions", filename="instructions.pdf", has_addendum=False)
+  - IL_fee_waiver_Post_interview_instructions: ALDocument.using(title="Fee Waiver Instructions", filename="instructions.pdf", has_addendum=False)
   - IL_fee_waiver_attachment: ALDocument.using(title="Fee Waiver Application", filename="Fee waiver application.pdf", has_addendum=False)
   - IL_fee_waiver_supplement: ALDocument.using(title="Winnebago Supplement", filename="Winnebago supplement.pdf", has_addendum=False)
   - IL_fee_waiver_order: ALDocument.using(title="Fee Waiver Order", filename="Fee waiver order.pdf", has_addendum=False)
@@ -1815,20 +1815,14 @@ subquestion: |
   It doesn't look like the court allows you to file a fee waiver into this case. If you have any questions, contact the court.
 ---
 code: |
-  IL_fee_waiver_Post_interview_instructions.enabled = False
-  IL_fee_waiver_attachment.enabled = False
-  IL_fee_waiver_supplement.enabled = False
-  IL_fee_waiver_order.enabled = False
+  IL_fee_waiver_Post_interview_instructions.enabled = True
+  IL_fee_waiver_attachment.enabled = True
+  IL_fee_waiver_order.enabled = True
 
   if trial_court.address.county == "Winnebago":
-    IL_fee_waiver_Post_interview_instructions.enabled = True
-    IL_fee_waiver_attachment.enabled = True
     IL_fee_waiver_supplement.enabled = True
-    IL_fee_waiver_order.enabled = True
   else:
-    IL_fee_waiver_Post_interview_instructions.enabled = True
-    IL_fee_waiver_attachment.enabled = True
-    IL_fee_waiver_order.enabled = True
+    IL_fee_waiver_supplement.enabled = False
 ---
 attachments:
   - name: Post interview instructions
