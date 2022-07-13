@@ -74,9 +74,6 @@ objects:
   - court_list: ALCourtLoader.using(file_name='docassemble.ILAO:data/sources/il_courts.xlsx')
   - court_emails: DAEmpty #dummy variable definition  
 ---
-sections:
-  - review_IL_fee_waiver: Review your answers
----
 scan for variables: False
 sets: interview_order_IL_fee_waiver
 #################### Interview order #####################
@@ -366,7 +363,7 @@ fields:
     min: 0
     show if: user_income_employment
   - "Unemployment benefits": user_income_unemployment
-    datatype: yesno    
+    datatype: yesno
   - "Amount": user_income_unemployment_amount
     datatype: currency
     min: 0
@@ -376,7 +373,7 @@ fields:
   - "Amount": user_income_household_amount
     datatype: currency
     min: 0
-    show if: user_income_household    
+    show if: user_income_household
   - "Social Security (not SSI)": user_income_ss
     datatype: yesno
   - "Amount": user_income_ss_amount
@@ -405,13 +402,21 @@ fields:
     min: 0
     show if: user_income_other
 ---
+depends on:
+  - user_income_other_amount
+  - user_income_household_amount
+  - user_income_ss_amount
+  - user_income_child_support_amount
+  - user_income_employment_amount
+  - user_income_unemployment_amount
+  - user_income_pension_amount
 code: |
   def sum_if_defined(*pargs):
     total = 0
     for source in pargs:
       if defined(source):
         total += value(source)
-    return total        
+    return total
   
   user_income_total = sum_if_defined('user_income_other_amount', 
       'user_income_household_amount',
@@ -419,7 +424,7 @@ code: |
       'user_income_employment_amount',
       'user_income_child_support_amount',
       'user_income_unemployment_amount',
-      'user_income_pension_amount')     
+      'user_income_pension_amount')
 ---
 id: What income did you receive in the last year
 question: |
@@ -477,7 +482,7 @@ fields:
     default: |
       % if defined('user_income_household_amount'):
       ${ user_income_household_amount * 12 }
-      % endif    
+      % endif
   - "Social Security": user_annual_ss
     datatype: yesno
     default: ${ showifdef('user_income_ss') }
@@ -488,7 +493,7 @@ fields:
       % if defined('user_income_ss_amount'):
       ${ user_income_ss_amount * 12 }
       % endif
-    show if: user_annual_ss      
+    show if: user_annual_ss
   - "Child support": user_annual_child_support
     datatype: yesno
     default: ${ showifdef('user_income_child_support') }
@@ -1246,14 +1251,17 @@ review:
     button: |
       **Number of minor dependents**:
       ${ user_dependents_children }
-  - Edit: user_receives_benefits
+  - Edit:
+      - user_benefits
+      - recompute:
+        - user_receives_benefits
     button: |
       **Receives public benefits**:
       ${ word(yesno(user_receives_benefits)) }
   - Edit: user_applied_for_benefits
     button: |
       **Applied for public benefits**:
-      ${ word(yesno(user_applied_for_benefits)) }
+      ${ word(yesno(user_applied_for_benefits.any_true())) }
   - Edit: user_income_employment
     button: |
       **Employment income (last month)**:
@@ -1787,26 +1795,46 @@ objects:
 objects:
   - IL_fee_waiver_package: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment, IL_fee_waiver_supplement, IL_fee_waiver_order], title="Fee Waiver Package", filename="Fee_waiver_package.pdf", enabled=True)
 ---
+if: can_check_efile
 code: |
-  if can_check_efile:
-    choosable_filing_types = [ft for ft in filing_type_options if "Waiver" in ft[1]]
-    if not choosable_filing_types:
-      no_filing_types_screen
-    elif len(choosable_filing_types) == 1:
-      IL_fee_waiver_package.tyler_filing_type = choosable_filing_types[0][0]
-    else:
-      IL_fee_waiver_package.tyler_filing_type
+  # TODO(brycew): replace the empty string
+  IL_fee_waiver_package.filtered_filing_options, IL_fee_waiver_package.filing_type = \
+      filter_codes(filing_type_options, ['Waiver'], '')
+  if IL_fee_waiver_package.filing_type is None:
+    IL_fee_waiver_package.filing_type = IL_fee_waiver_package.user_chosen_filing_type
 ---
-id: filing type et al.
+if: can_check_efile
+code: |
+  IL_fee_waiver_attachment.filing_component_filters = ['Lead Document']
+  IL_fee_waiver_attachment.filing_component_default = '332'
+  IL_fee_waiver_supplement.filing_component_filters = ['Attachment']
+  IL_fee_waiver_supplement.filing_component_default = '331'
+  IL_fee_waiver_order.filing_component_filters = ['Attachment']
+  IL_fee_waiver_order.filing_component_default = '331'
+---
+if: can_check_efile
+code: |
+  IL_fee_waiver_package.filing_component_filters = ['Lead Document']
+  IL_fee_waiver_package.filing_component_default = '332'
+---
+code: |
+  IL_fee_waiver_package.filing_description = f'Fee Waiver application for {users[0].name}'
+  IL_fee_waiver_package.reference_number = None
+  IL_fee_waiver_package.filing_action = 'efile'
+  IL_fee_waiver_package.filing_parties = ['users[0]']
+  IL_fee_waiver_package.optional_services.there_are_any = False
+---
+generic object: DAObject
+id: user chosen filing_type
 question: |
-  What filing code should be used?
+  What is the filing type of this filing?
 subquestion: |
   We found a few filing codes that could be used to file your fee waiver. Choose the one that you think best fits your case.
 fields:
-  - Filing Type: IL_fee_waiver_package.tyler_filing_type
+  - Filing type: x.user_chosen_filing_type
     datatype: dropdown
     code: |
-      choosable_filing_types
+      x.filtered_filing_options
 ---
 event: no_filing_types_screen
 question: |
@@ -1971,11 +1999,11 @@ attachments:
           % if not user_income_none:
           ${ user_income_ss }
           % endif
-      - "user_income_employment":  |
+      - "user_income_employment": |
           % if not user_income_none:
           ${ user_income_employment }
           % endif
-      - "user_income_employment_amount":  |
+      - "user_income_employment_amount": |
           % if not user_income_none:
           ${ thousands(user_income_employment_amount, show_decimals=True) }
           % endif
