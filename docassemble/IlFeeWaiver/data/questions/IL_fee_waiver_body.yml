@@ -916,13 +916,10 @@ question: |
   % endif
 fields:
   - Year of birth: users[0].birth_year
-    input type: combobox
     datatype: integer
     maxlength: 4
     min: ${ today().year-120 }
     max: ${ today().year }
-    code: |
-      reversed(range(today().year-120, today().year+1))
 ---
 id: your contact information
 generic object: ALIndividual
@@ -933,7 +930,7 @@ fields:
     required: False
   - label: |
       I have an email address
-    field: x.has_email_address      
+    field: x.has_email_address
     datatype: yesnoradio
   - note: |
       This email address will appear on your court forms. Be sure to check 
@@ -1793,54 +1790,52 @@ objects:
 #  - IL_fee_waiver_order: ALDocument.using(title="Fee Waiver Order", filename="FeeWaiver_Civil_Order.pdf", has_addendum=False)
 ---
 objects:
-  - IL_fee_waiver_package: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment, IL_fee_waiver_supplement, IL_fee_waiver_order], title="Fee Waiver Package", filename="Fee_waiver_package.pdf", enabled=True)
+  - IL_fee_waiver_full_attachment: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment, IL_fee_waiver_supplement], title="Fee Waiver Application", filename="Fee_waiver_full_application.pdf", enabled=True)
 ---
 if: can_check_efile
 code: |
-  # TODO(brycew): replace the empty string
-  IL_fee_waiver_package.filtered_filing_options, IL_fee_waiver_package.filing_type = \
-      filter_codes(filing_type_options, ['Waiver'], '')
-  if IL_fee_waiver_package.filing_type is None:
-    IL_fee_waiver_package.filing_type = IL_fee_waiver_package.user_chosen_filing_type
+  IL_fee_waiver_full_attachment.filing_type_filters = ['Waiver']
+  IL_fee_waiver_full_attachment.filing_type_default = None
+---
+if: can_check_efile
+code: |
+  IL_fee_waiver_full_attachment.filing_component_filters = ['Lead Document']
+  IL_fee_waiver_full_attachment.filing_component_default = '332'
 ---
 if: can_check_efile
 code: |
   IL_fee_waiver_attachment.filing_component_filters = ['Lead Document']
   IL_fee_waiver_attachment.filing_component_default = '332'
+  IL_fee_waiver_attachment.document_description = 'Application for Waiver of Court Fees'
   IL_fee_waiver_supplement.filing_component_filters = ['Attachment']
   IL_fee_waiver_supplement.filing_component_default = '331'
-  IL_fee_waiver_order.filing_component_filters = ['Attachment']
-  IL_fee_waiver_order.filing_component_default = '331'
+  IL_fee_waiver_supplement.document_description = 'Supplemental Form (Application for Waiver of Fees)'
 ---
 if: can_check_efile
 code: |
-  IL_fee_waiver_package.filing_component_filters = ['Lead Document']
-  IL_fee_waiver_package.filing_component_default = '332'
+  IL_fee_waiver_order.filing_component_filters = ['Lead Document']
+  IL_fee_waiver_order.filing_component_default = '332'
+---
+if: can_check_efile
+code: |
+  IL_fee_waiver_order.filing_type_default = '29216'
+  IL_fee_waiver_order.filing_type_filters = ['Proposed Order']
 ---
 code: |
-  IL_fee_waiver_package.filing_description = f'Fee Waiver application for {users[0].name}'
-  IL_fee_waiver_package.reference_number = None
-  IL_fee_waiver_package.filing_action = 'efile'
-  IL_fee_waiver_package.filing_parties = ['users[0]']
-  IL_fee_waiver_package.optional_services.there_are_any = False
+  IL_fee_waiver_full_attachment.document_description = 'Application for Waiver of Court Fees'
+  IL_fee_waiver_full_attachment.filing_description = ''
+  IL_fee_waiver_full_attachment.reference_number = None
+  IL_fee_waiver_full_attachment.filing_action = 'efile'
+  IL_fee_waiver_full_attachment.filing_parties = ['users[0]']
+  IL_fee_waiver_full_attachment.optional_services.there_are_any = False
 ---
-generic object: DAObject
-id: user chosen filing_type
-question: |
-  What is the filing type of this filing?
-subquestion: |
-  We found a few filing codes that could be used to file your fee waiver. Choose the one that you think best fits your case.
-fields:
-  - Filing type: x.user_chosen_filing_type
-    datatype: dropdown
-    code: |
-      x.filtered_filing_options
----
-event: no_filing_types_screen
-question: |
-  You cannot file a Fee Waiver into this case
-subquestion: |
-  It doesn't look like the court allows you to file a fee waiver into this case. If you have any questions, contact the court.
+code: |
+  IL_fee_waiver_order.document_description = 'Proposed Order for Waiver of Court Fees'
+  IL_fee_waiver_order.filing_description = ''
+  IL_fee_waiver_order.reference_number = None
+  IL_fee_waiver_order.filing_action = 'efile'
+  IL_fee_waiver_order.filing_parties = ['users[0]']
+  IL_fee_waiver_order.optional_services.there_are_any = False
 ---
 code: |
   IL_fee_waiver_Post_interview_instructions.enabled = True
