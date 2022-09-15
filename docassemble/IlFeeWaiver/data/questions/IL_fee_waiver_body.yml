@@ -312,11 +312,17 @@ question: |
   ${ users[0].familiar() } qualifies for a fee waiver.
   % endif
 subquestion: |
-  % if filing_basis == "filing_self": 
+  % if filing_basis == "filing_self":
   Because you currently receive public benefits, you should qualify for 100% waiver of fees for your civil case.
+
+  You may may need to bring proof of your public benefits to the fee waiver hearing or the 1st court date.
+  You should check with the ${ trial_court } circuit clerk${ " at " + trial_court.phone if hasattr(trial_court, 'phone') else ""}.
   % else:
   Because ${ users[0].familiar() } currently receives public benefits,
   they should qualify for a 100% waiver of fees in this civil case.
+
+  They may may need to bring proof of your public benefits to the fee waiver hearing or the 1st court date.
+  They should check with the ${ trial_court } circuit clerk${ " at " + trial_court.phone if hasattr(trial_court, 'phone') else ""}.
   % endif
 ---
 id: How many dependents do you have
@@ -1057,7 +1063,7 @@ yesno: other_parties.there_are_any
 ---
 id: any other opposing parties
 question: |
-  % if users==plaintiffs:
+  % if user_role == "plaintiff":
   Is there another **defendant** or **respondent** in this case?
   % else:
   Is there another **plaintiff** or **petitioner** in this case?
@@ -1075,7 +1081,7 @@ sets:
   - other_parties[i].name.middle
   - other_parties[i].name.suffix
 question: |
-  % if users==plaintiffs:
+  % if user_role == "plaintiffs":
   What is the name of the ${ ordinal(i) } **defendant** or **respondent** in this
   case?
   % else:
@@ -1784,23 +1790,26 @@ objects:
   - IL_fee_waiver_attachment: ALDocument.using(title="Fee Waiver Application", filename="Fee waiver application.pdf", has_addendum=False)
   - IL_fee_waiver_supplement: ALDocument.using(title="Winnebago Supplement", filename="Winnebago supplement.pdf", has_addendum=False)
   - IL_fee_waiver_order: ALDocument.using(title="Fee Waiver Order", filename="Fee waiver order.pdf", has_addendum=False)
-#  - IL_fee_waiver_Post_interview_instructions: ALDocument.using(title="Instructions", filename="il_fee_waiver_instructions.pdf", has_addendum=False)
-#  - IL_fee_waiver_attachment: ALDocument.using(title="Fee Waiver Application", filename="FeeWaiver_Civil_Application.pdf", has_addendum=False)
-#  - IL_fee_waiver_supplement: ALDocument.using(title="Winnebago Supplement", filename="winnebago_supplement.pdf", has_addendum=False)
-#  - IL_fee_waiver_order: ALDocument.using(title="Fee Waiver Order", filename="FeeWaiver_Civil_Order.pdf", has_addendum=False)
 ---
 objects:
   - IL_fee_waiver_full_attachment: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment, IL_fee_waiver_supplement], title="Fee Waiver Application", filename="Fee_waiver_full_application.pdf", enabled=True)
 ---
 if: can_check_efile
 code: |
-  IL_fee_waiver_full_attachment.filing_type_filters = ['Waiver']
+  IL_fee_waiver_full_attachment.filing_type_filters = [
+      'Application Waiver of Court Fees (Civil)',
+      'Application for Waiver of Court Fees',
+      'Waiver For Fees',
+      'Waiver'
+  ]
   IL_fee_waiver_full_attachment.filing_type_default = None
 ---
 if: can_check_efile
 code: |
   IL_fee_waiver_full_attachment.filing_component_filters = ['Lead Document']
   IL_fee_waiver_full_attachment.filing_component_default = '332'
+  IL_fee_waiver_full_attachment.optional_services_defaults = []
+  IL_fee_waiver_full_attachment.optional_services_filters = []
 ---
 if: can_check_efile
 code: |
@@ -1810,6 +1819,8 @@ code: |
   IL_fee_waiver_supplement.filing_component_filters = ['Attachment']
   IL_fee_waiver_supplement.filing_component_default = '331'
   IL_fee_waiver_supplement.document_description = 'Supplemental Form (Application for Waiver of Fees)'
+  IL_fee_waiver_supplement.optional_services_defaults = []
+  IL_fee_waiver_supplement.optional_services_filters = []
 ---
 if: can_check_efile
 code: |
@@ -1818,11 +1829,14 @@ code: |
 ---
 if: can_check_efile
 code: |
-  IL_fee_waiver_order.filing_type_default = '29216'
   IL_fee_waiver_order.filing_type_filters = ['Proposed Order']
+  IL_fee_waiver_order.filing_type_default = '29216'
+  IL_fee_waiver_order.optional_services_defaults = []
+  IL_fee_waiver_order.optional_services_filters = []
 ---
 code: |
   IL_fee_waiver_full_attachment.document_description = 'Application for Waiver of Court Fees'
+  IL_fee_waiver_full_attachment.document_type = '5766' # non-confidential
   IL_fee_waiver_full_attachment.filing_description = ''
   IL_fee_waiver_full_attachment.reference_number = None
   IL_fee_waiver_full_attachment.filing_action = 'efile'
@@ -1831,6 +1845,7 @@ code: |
 ---
 code: |
   IL_fee_waiver_order.document_description = 'Proposed Order for Waiver of Court Fees'
+  IL_fee_waiver_order.document_type = '5766' # non-confidential
   IL_fee_waiver_order.filing_description = ''
   IL_fee_waiver_order.reference_number = None
   IL_fee_waiver_order.filing_action = 'efile'
