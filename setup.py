@@ -53,7 +53,7 @@ setup(name='docassemble.IlFeeWaiver',
       url='http://www.illinoislegalaid.org',
       packages=find_packages(),
       namespace_packages=['docassemble'],
-      install_requires=['docassemble.AssemblyLine>=2.11.3', 'docassemble.ILAO', 'docassemble.PovertyScale>=2022.1.19', 'docassemble.EFSPIntegration>=0.6.0'],
+      install_requires=['docassemble.AssemblyLine>=2.11.3', 'docassemble.PovertyScale>=2022.1.19', 'docassemble.EFSPIntegration>=0.6.0'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/IlFeeWaiver/', package='docassemble.IlFeeWaiver'),
      )
