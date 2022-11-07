@@ -1828,14 +1828,15 @@ code: |
 ---
 if: can_check_efile
 code: |
-  IL_fee_waiver_order.filing_type_filters = ['Proposed Order']
+  IL_fee_waiver_order.filing_type_filters = ['Proposed Order', 'Other Document Not Listed']
   IL_fee_waiver_order.filing_type_default = 'none available' # '29216'
   IL_fee_waiver_order.optional_services_defaults = []
   IL_fee_waiver_order.optional_services_filters = []
 ---
 code: |
   IL_fee_waiver_full_attachment.document_description = 'Application for Waiver of Court Fees'
-  IL_fee_waiver_full_attachment.document_type = '5766' # non-confidential
+  IL_fee_waiver_full_attachment.document_type_default = '5766' # non-confidential
+  IL_fee_waiver_full_attachment.document_type_filters = ['non-confidential']
   IL_fee_waiver_full_attachment.filing_description = ''
   IL_fee_waiver_full_attachment.reference_number = None
   IL_fee_waiver_full_attachment.filing_action = 'efile'
@@ -1844,7 +1845,8 @@ code: |
 ---
 code: |
   IL_fee_waiver_order.document_description = 'Proposed Order for Waiver of Court Fees'
-  IL_fee_waiver_order.document_type = '5766' # non-confidential
+  IL_fee_waiver_order.document_type_default = '5766' # non-confidential
+  IL_fee_waiver_order.document_type_filters = ['non-confidential']
   IL_fee_waiver_order.filing_description = ''
   IL_fee_waiver_order.reference_number = None
   IL_fee_waiver_order.filing_action = 'efile'
