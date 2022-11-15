@@ -1828,7 +1828,11 @@ code: |
 ---
 if: can_check_efile
 code: |
-  IL_fee_waiver_order.filing_type_filters = ['Proposed Order', 'Other Document Not Listed']
+  IL_fee_waiver_order.filing_type_filters = [
+    'Proposed Order',
+    'Other Document Not Listed (Non-confidential)',
+    'Other Document Not Listed'
+  ]
   IL_fee_waiver_order.filing_type_default = 'none available' # '29216'
   IL_fee_waiver_order.optional_services_defaults = []
   IL_fee_waiver_order.optional_services_filters = []
