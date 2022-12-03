@@ -43,7 +43,7 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.IlFeeWaiver',
-      version='2.0.0rc3',
+      version='2.0.0',
       description=('Fee waiver'),
       long_description='# docassemble.IlFeeWaiver\r\n\r\nApplication for Fee Waiver\r\n\r\n## Author\r\n\r\nQuinten Steenhuis / Matt Newsted\r\n\r\nqsteenhuis@suffolk.edu, mnewsted@illinoislegalaid.org\r\n\r\n',
       long_description_content_type='text/markdown',
