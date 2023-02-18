@@ -246,6 +246,9 @@ fields:
 code: |
   user_receives_benefits = user_benefits.any_true()
 ---
+code: |
+  user_has_applied_for_benefits = user_applied_for_benefits.any_true()
+---
 id: is the user the plaintiff or defendant?
 question: |
   % if filing_basis == "filing_self":
@@ -406,6 +409,9 @@ fields:
     datatype: currency
     min: 0
     show if: user_income_other
+validation code: |
+  if not (user_income_none or user_income_employment or user_income_unemployment or user_income_household or user_income_ss or user_income_child_support or user_income_pension or user_income_other):
+    validation_error("Check at least one option.", field="user_income_other")
 ---
 depends on:
   - user_income_other_amount
@@ -537,6 +543,9 @@ fields:
       % if defined('user_income_other_amount'):
       ${ user_income_other_amount * 12 }
       % endif
+validation code: |
+  if not (user_annual_none or user_annual_employment or user_annual_unemployment or user_annual_household or user_annual_ss or user_annual_child_support or user_annual_pension or user_annual_other):
+    validation_error("Check at least one option.", field="user_annual_other")
 ---
 code: |
   user_annual_total = sum_if_defined(
@@ -644,6 +653,9 @@ fields:
     datatype: currency
     min: 0
     show if: user_expense_debt_other
+validation code: |
+  if not (user_expense_none or user_expense_rent or user_expense_mortgage or user_expense_other_mortgage or user_expense_utilities or user_expense_food or user_expense_medical or user_expense_car or user_expense_childcare or user_expense_child_support or user_expense_other or user_expense_debt_other):
+    validation_error("Check at least one option.", field="user_expense_debt_other")
 ---
 code: |
   user_expense_total = sum_if_defined(
@@ -751,15 +763,9 @@ fields:
     datatype: currency
     min: 0
     show if: user_asset_other 
-#validation code: |
-#  if not user_asset_none and not (
-#    user_asset_bank_account or 
-#    user_asset_home or
-#    user_asset_other_real_estate or
-#    user_asset_vehicle1 or
-#    user_asset_vehicle2 or
-#    user_asset_other):
-#    validation_error("You need to select one", field="user_asset_none")
+validation code: |
+  if not (user_asset_none or user_asset_bank_account or user_asset_home or user_asset_other_real_estate or user_asset_vehicle1 or user_asset_other):
+    validation_error("Check at least one option.", field="user_asset_other")
 ---
 code: |
   user_asset_total = (sum_if_defined(

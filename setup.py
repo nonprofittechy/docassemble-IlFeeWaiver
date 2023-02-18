@@ -6,6 +6,7 @@ from distutils.util import convert_path
 
 standard_exclude = ('*.pyc', '*~', '.*', '*.bak', '*.swp*')
 standard_exclude_directories = ('.*', 'CVS', '_darcs', './build', './dist', 'EGG-INFO', '*.egg-info')
+
 def find_package_data(where='.', package='', exclude=standard_exclude, exclude_directories=standard_exclude_directories):
     out = {}
     stack = [(convert_path(where), '', package)]
@@ -43,7 +44,7 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.IlFeeWaiver',
-      version='2.0.0',
+      version='2.0.1',
       description=('Fee waiver'),
       long_description='# docassemble.IlFeeWaiver\r\n\r\nApplication for Fee Waiver\r\n\r\n## Author\r\n\r\nQuinten Steenhuis / Matt Newsted\r\n\r\nqsteenhuis@suffolk.edu, mnewsted@illinoislegalaid.org\r\n\r\n',
       long_description_content_type='text/markdown',
@@ -53,7 +54,7 @@ setup(name='docassemble.IlFeeWaiver',
       url='http://www.illinoislegalaid.org',
       packages=find_packages(),
       namespace_packages=['docassemble'],
-      install_requires=['docassemble.AssemblyLine>=2.11.3', 'docassemble.PovertyScale>=2022.1.19', 'docassemble.EFSPIntegration>=0.6.0'],
+      install_requires=['docassemble.AssemblyLine>=2.21.0', 'docassemble.EFSPIntegration>=1.0.0rc2', 'docassemble.PovertyScale>=2022.9.29'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/IlFeeWaiver/', package='docassemble.IlFeeWaiver'),
      )
