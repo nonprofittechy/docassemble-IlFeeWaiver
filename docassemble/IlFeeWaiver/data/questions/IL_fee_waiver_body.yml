@@ -1797,7 +1797,7 @@ objects:
   - IL_fee_waiver_order: ALDocument.using(title="Fee Waiver Order", filename="Fee waiver order.pdf", has_addendum=False)
 ---
 objects:
-  - IL_fee_waiver_full_for_user: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment, IL_fee_waiver_attachment], title="Fee Waiver Application", filename="Fee_waiver_full_application.pdf", enabled=True)
+  - IL_fee_waiver_full_for_user: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment, IL_fee_waiver_supplement], title="Fee Waiver Application", filename="Fee_waiver_full_application.pdf", enabled=True)
   - IL_fee_waiver_full_for_court: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment], title="Fee Waiver Application", filename="Fee_waiver_full_application.pdf", enabled=True)
 ---
 if: can_check_efile
