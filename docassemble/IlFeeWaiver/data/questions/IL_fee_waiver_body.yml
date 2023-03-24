@@ -1797,35 +1797,46 @@ objects:
   - IL_fee_waiver_order: ALDocument.using(title="Fee Waiver Order", filename="Fee waiver order.pdf", has_addendum=False)
 ---
 objects:
-  - IL_fee_waiver_full_attachment: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment, IL_fee_waiver_supplement], title="Fee Waiver Application", filename="Fee_waiver_full_application.pdf", enabled=True)
+  - IL_fee_waiver_full_for_user: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment, IL_fee_waiver_attachment], title="Fee Waiver Application", filename="Fee_waiver_full_application.pdf", enabled=True)
+  - IL_fee_waiver_full_for_court: ALDocumentBundle.using(elements=[IL_fee_waiver_attachment], title="Fee Waiver Application", filename="Fee_waiver_full_application.pdf", enabled=True)
 ---
 if: can_check_efile
 code: |
-  IL_fee_waiver_full_attachment.filing_type_filters = [
+  IL_fee_waiver_full_for_court.filing_type_filters = [
       'Application Waiver of Court Fees (Civil)',
       'Application for Waiver of Court Fees',
       'Waiver For Fees',
       'Waiver'
   ]
-  IL_fee_waiver_full_attachment.filing_type_default = None
+  IL_fee_waiver_full_for_court.filing_type_default = None
 ---
 if: can_check_efile
 code: |
-  IL_fee_waiver_full_attachment.filing_component_filters = ['Lead Document']
-  IL_fee_waiver_full_attachment.filing_component_default = '332'
-  IL_fee_waiver_full_attachment.optional_services_defaults = []
-  IL_fee_waiver_full_attachment.optional_services_filters = []
+  IL_fee_waiver_supplement.filing_type_filters = [
+    'Supplemental',
+    'Supplement',
+  ]
+  IL_fee_waiver_supplement.filing_type_default = None
+---
+if: can_check_efile
+code: |
+  IL_fee_waiver_full_for_court.filing_component_filters = ['Lead Document']
+  IL_fee_waiver_full_for_court.filing_component_default = '332'
+  IL_fee_waiver_full_for_court.optional_services_defaults = []
+  IL_fee_waiver_full_for_court.optional_services_filters = []
+---
+if: can_check_efile
+code: |
+  IL_fee_waiver_supplement.filing_component_filters = ['Lead Document']
+  IL_fee_waiver_supplement.filing_component_default = '332'
+  IL_fee_waiver_supplement.optional_services_defaults = []
+  IL_fee_waiver_supplement.optional_services_filters = []
 ---
 if: can_check_efile
 code: |
   IL_fee_waiver_attachment.filing_component_filters = ['Lead Document']
   IL_fee_waiver_attachment.filing_component_default = '332'
   IL_fee_waiver_attachment.document_description = 'Application for Waiver of Court Fees'
-  IL_fee_waiver_supplement.filing_component_filters = ['Attachment']
-  IL_fee_waiver_supplement.filing_component_default = '331'
-  IL_fee_waiver_supplement.document_description = 'Supplemental Form (Application for Waiver of Fees)'
-  IL_fee_waiver_supplement.optional_services_defaults = []
-  IL_fee_waiver_supplement.optional_services_filters = []
 ---
 if: can_check_efile
 code: |
@@ -1844,14 +1855,24 @@ code: |
   IL_fee_waiver_order.optional_services_filters = []
 ---
 code: |
-  IL_fee_waiver_full_attachment.document_description = 'Application for Waiver of Court Fees'
-  IL_fee_waiver_full_attachment.document_type_default = '5766' # non-confidential
-  IL_fee_waiver_full_attachment.document_type_filters = ['non-confidential']
-  IL_fee_waiver_full_attachment.filing_description = ''
-  IL_fee_waiver_full_attachment.reference_number = None
-  IL_fee_waiver_full_attachment.filing_action = 'efile'
-  IL_fee_waiver_full_attachment.filing_parties = ['users[0]']
-  IL_fee_waiver_full_attachment.optional_services.there_are_any = False
+  IL_fee_waiver_full_for_court.document_description = 'Application for Waiver of Court Fees'
+  IL_fee_waiver_full_for_court.document_type_default = '5766' # non-confidential
+  IL_fee_waiver_full_for_court.document_type_filters = ['non-confidential']
+  IL_fee_waiver_full_for_court.filing_description = ''
+  IL_fee_waiver_full_for_court.reference_number = None
+  IL_fee_waiver_full_for_court.filing_action = 'efile'
+  IL_fee_waiver_full_for_court.filing_parties = ['users[0]']
+  IL_fee_waiver_full_for_court.optional_services.there_are_any = False
+---
+code: |
+  IL_fee_waiver_supplement.document_description = 'Supplemental Form (Application for Waiver of Fees)'
+  IL_fee_waiver_supplement.document_type_default = '5766' # non-confidential
+  IL_fee_waiver_supplement.document_type_filters = ['non-confidential']
+  IL_fee_waiver_supplement.filing_description = ''
+  IL_fee_waiver_supplement.reference_number = None
+  IL_fee_waiver_supplement.filing_action = 'efile'
+  IL_fee_waiver_supplement.filing_parties = ['users[0]']
+  IL_fee_waiver_supplement.optional_services.there_are_any = False
 ---
 code: |
   IL_fee_waiver_order.document_description = 'Proposed Order for Waiver of Court Fees'
