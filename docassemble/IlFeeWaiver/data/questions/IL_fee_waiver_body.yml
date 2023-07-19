@@ -1077,7 +1077,9 @@ subquestion: |
   % if len(other_parties.elements) >= 1:  
   So far you have told us about ${comma_and_list(other_parties.complete_elements().full_names())}.
   % endif
-yesno: other_parties.there_is_another
+fields:
+  - "Anyone else?": other_parties.there_is_another
+    datatype: yesnoradio
 ---
 id: names of opposing parties
 sets:
