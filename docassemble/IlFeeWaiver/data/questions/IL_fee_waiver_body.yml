@@ -7,6 +7,10 @@ include:
 modules:
   - docassemble.PovertyScale.poverty
 ---
+code: |
+  # By default, assume this will be included in other interviews
+  fee_waiver_is_standalone = False
+---
 mandatory: True
 comment: |
   This contains metadata that will not be overwritten if this YAML file is included in another file. Each file gets its own key in the interview_metadata dictionary.
@@ -82,23 +86,26 @@ id: interview_order_IL_fee_waiver
 code: |
   # Set the allowed courts for this interview
   allowed_courts = interview_metadata["IL_fee_waiver"]["allowed courts"]
-  nav.set_section('review_IL_fee_waiver')
   filing_basis
-  #if filing_basis == "filing_on_behalf_of":
-  # users.gather() moved to after user_ask_role    
+
+  if fee_waiver_is_standalone:
+    nav.set_section('section_income')
   if user_receives_benefits:
     user_qualifies_interstitial
   else:
     user_applied_for_benefits
     user_has_dependents
-    set_progress(11.11)
+    if fee_waiver_is_standalone:
+      set_progress(25)
     user_income_none
     user_annual_none
+    if fee_waiver_is_standalone:
+      nav.set_section('section_expenses')
     user_expense_none
-    set_progress(22.22)
+    if fee_waiver_is_standalone:
+      set_progress(35)
+      nav.set_section('section_assets')
     ask_user_assets
-    # If something went wrong obtaining income limit, just skip this screen
-    # The error will get logged.
     if not poverty_scale_get_income_limit(household_size=household_size, multiplier=1.25) is None:
       show_qualification_guess
   substantial_hardship_explanation
@@ -106,26 +113,29 @@ code: |
 
   # Below sets the user_role by asking a question.
   # You can set user_role directly instead to either 'plaintiff' or 'defendant'
+  if fee_waiver_is_standalone:
+    set_progress(50)
+    nav.set_section('section_case_info')
   user_role
   users.gather()
-  other_parties.gather()  
-  # user_consents_email_notice
-  set_progress(33.33)
+  other_parties.gather()
+  if in_re_check:
+    in_re_label
   trial_court.address.address
   docket_number
   plaintiffs
   defendants
-  set_progress(44.44)
+
+  if fee_waiver_is_standalone:
+    set_progress(75)
+    nav.set_section('section_about_you')
   set_parts(subtitle=str(users))
   users[0].birth_year
-  set_progress(55.56)
   users[0].address.address
   if filing_basis == "filing_self":
-    set_progress(66.67)
     users[0].has_email_address
   if filing_basis != "filing_self":
     signer[0].address.address
-    set_progress(66.67)
     signer[0].has_email_address
   interview_order_IL_fee_waiver = True
 ---
@@ -243,6 +253,8 @@ fields:
       - State Children and Family Assistance: SCFA
     required: False
 ---
+depends on:
+  - user_benefits
 code: |
   user_receives_benefits = user_benefits.any_true()
 ---
@@ -257,6 +269,8 @@ question: |
   Did ${ users[0].familiar() } start this case, or did they respond to a case
   that someone else filed?
   % endif
+subquestion: |
+  ${ collapse_template(user_role_help) }
 fields: 
   - no label: user_ask_role
     datatype: radio
@@ -296,15 +310,21 @@ fields:
     show if:
       variable: user_ask_role
       is: "defendant"
-help:
-  label: |
-    How do I know?
-  content: |
-    If you are the first person to file a form in the case, you 
-    started the case. You are the **Plaintiff** or the **Petitioner.**
+---
+template: user_role_help
+subject: |
+  **What if I'm not sure?**
+content: |  
+  % if filing_basis == "filing_self":
+  If you are the first person to file a form in the case, you started the case. You are the **Plaintiff** or the **Petitioner.**
 
-    If you are responding to a case or court papers someone else filed, you
-    are the **Defendant** or the **Respondent.**
+  If you are responding to a case or court papers someone else filed, you are the **Defendant** or the **Respondent.**
+  % else:
+  If ${ users[0].familiar() } is the first person to file a form in the case, they started the case. ${ users[0].familiar() } is the **Plaintiff** or the **Petitioner.**
+
+  If ${ users[0].familiar() } is responding to a case or court papers someone else filed, ${ users[0].familiar() } is the **Defendant** or the **Respondent.**
+  % endif
+---
 ---
 continue button field: user_qualifies_interstitial
 question: |
@@ -402,6 +422,14 @@ fields:
     show if: user_income_pension
   - "Other income": user_income_other
     datatype: yesno
+    help: |
+      Examples of other income include:
+
+        * Financial support from family or friends,
+        * Spousal support, also called alimony,
+        * Business or rental income,
+        * Veterans benefits, or 
+        * Military allowance.
   - "Other income source (if more than one, list all)": user_income_other_kind
     maxlength: 30
     show if: user_income_other
@@ -530,6 +558,14 @@ fields:
   - "Other": user_annual_other
     datatype: yesno
     default: ${ showifdef('user_income_other') }
+    help: |
+      Examples of other income include:
+      
+        * Financial support from family or friends,
+        * Spousal support, also called alimony,
+        * Business or rental income,
+        * Veterans benefits, or 
+        * Military allowance.
   - "Other kind of income (if more than one, list all)": user_annual_other_kind
     maxlength: 30
     show if: user_annual_other
@@ -633,6 +669,14 @@ fields:
     show if: user_expense_child_support
   - "Other expense": user_expense_other
     datatype: yesno
+    help: |
+      Examples of other expenses include:
+
+        * Transportation costs like gas, car repairs, or bus passes,
+        * Car insurance or other kinds of insurance,
+        * Home maintenance,
+        * Household supplies, or
+        * School fees.
   - "Other kind of expense (if more than one, list all)": user_expense_other_line1
     maxlength: 24
     show if: user_expense_other
@@ -644,6 +688,13 @@ fields:
     show if: user_expense_other
   - "Other debt payment": user_expense_debt_other
     datatype: yesno
+    help: |
+      Examples of other debt payments include:
+      
+        * Credit card debt,
+        * Student loans,
+        * Payday loans, or
+        * Loans from family or friends.
   - "Other kind of debt (if more than one, list all)": user_expense_debt_other_line1
     maxlength: 28
     show if: user_expense_debt_other
@@ -705,6 +756,12 @@ question: |
   % else:
   What assets does ${ users[0].familiar() } have?
   % endif
+subquestion: |
+  % if filing_basis == "filing_self":
+  Assets are things you own, like money, your property, and other belongings.
+  % else:
+  Assets are things ${ users[0].familiar() } owns, like money, their property, and other belongings.
+  % endif
 fields:
   - "No assets": user_asset_none
     datatype: yesno
@@ -756,6 +813,13 @@ fields:
     show if: user_asset_vehicle2
   - "Other asset": user_asset_other
     datatype: yesno
+    help: |
+      Examples of other assets include:
+      
+        * Stocks,
+        * Bonds,
+        * Jewelry, or
+        * Collectibles.
   - "Other kind of asset (if more than one, list all)": user_asset_other_kind
     maxlength: 29
     show if: user_asset_other    
@@ -849,8 +913,8 @@ subquestion: |
 ---
 template: other_fee_waiver_considerations
 subject: |
-  What else the judge will consider
-content: |  
+  **What else the judge will consider**
+content: |
   The judge will look at all of the information that you provided on this
   form to decide if ${ you_or_they } qualify. For example, the judge will compare ${ your_or_their }
   assets and expenses. They will also read any additional explanation that you
@@ -865,8 +929,6 @@ content: |
   
   
   The judge may decide that ${ you_or_they } qualify for a partial redicution in court fees even if ${ you_or_they } do not qualify for a full waiver.
-  
-  
 ---
 id: Who is filing this fee waiver
 question: |
@@ -936,8 +998,11 @@ id: your contact information
 generic object: ALIndividual
 question: |
   What is your contact information?
-fields:  
+subquestion: |
+  ${ collapse_template(contact_info_help) }
+fields:
   - Phone number: x.phone_number
+    datatype: al_international_phone
     required: False
   - label: |
       I have an email address
@@ -947,8 +1012,8 @@ fields:
       This email address will appear on your court forms. Be sure to check 
       this email daily, otherwise you may miss important information about 
       your case.
-    show if: x.has_email_address      
-  - Email address: x.email    
+    show if: x.has_email_address
+  - Email address: x.email
     datatype: email
     show if: 
       variable: x.has_email_address
@@ -957,16 +1022,17 @@ validation code: |
   if (not showifdef('x.phone_number') and \
       (not showifdef('x.email'))):
     validation_error(word("You need to provide at least one contact method."), field="x.other_contact_method")
-help: |
+---
+template: contact_info_help
+subject: |
+  **Why do I need to include this?**
+content: |
   % if al_form_type in ['starts_case','existing_case','appeal']:
   The court **must** be able to reach you. So you have to give them some way to do this.
   
-  Some forms allow you to tell the court you need to keep your address, phone,
-  and email confidential, so that only court staff can see this information. 
+  Some forms allow you to tell the court you need to keep your address, phone, and email confidential, so that only court staff can see this information. 
   % else:
-  It is important that the person or organization you deliver this form to
-  is able to contact you. Make sure to include at least one way to reach you
-  other than mail.
+  It is important that the person or organization you deliver this form to is able to contact you. Make sure to include at least one way to reach you other than mail.
   % endif
 ---
 id: substantial hardship
@@ -996,8 +1062,8 @@ fields:
   - label: (Optional)
     field: substantial_hardship_explanation
     datatype: area
-    rows: 4
-    maxlength: 640
+    rows: 5
+    maxlength: 500
     required: False
 ---
 id: any other users
@@ -1012,10 +1078,12 @@ question: |
     % endif
   % endif
 subquestion: |
-  % if len(users.elements) > 1:  
+  % if len(users.elements) > 1:
   So far you have told us about ${comma_and_list(users.complete_elements().full_names())}.
-  % endif  
-yesno: users.there_is_another 
+  % endif
+fields:
+  - no label: users.there_is_another
+    datatype: yesnoradio
 ---
 sets:
   - users[i].name.first
@@ -1049,9 +1117,9 @@ content: |
 id: is there an opposing party?
 question: |
   % if al_form_type in ['starts_case','existing_case','appeal'] and user_started_case:
-  Is there a **defendant** or respondent in this case? 
+  Is there a **defendant** or **respondent** in this case? 
   % elif al_form_type in ['starts_case','existing_case','appeal']:
-  Is there a **plaintiff** or petitioner in this case?
+  Is there a **plaintiff** or **petitioner** in this case?
   % else:
   Is there someone on the other side of your dispute?
   % endif
@@ -1064,7 +1132,9 @@ subquestion: |
 
   Answer yes if someone else has sued ${ you_or_obo_name } or is bringing ${ you_or_obo_name } to court.
   % endif
-yesno: other_parties.there_are_any
+fields:
+  - no label: other_parties.there_are_any
+    datatype: yesnoradio
 ---
 id: any other opposing parties
 question: |
@@ -1088,7 +1158,7 @@ sets:
   - other_parties[i].name.middle
   - other_parties[i].name.suffix
 question: |
-  % if user_role == "plaintiffs":
+  % if user_role == "plaintiff":
   What is the name of the ${ ordinal(i) } **defendant** or **respondent** in this
   case?
   % else:
@@ -1099,6 +1169,23 @@ subquestion: |
 fields:
   - code: |
       other_parties[i].name_fields(person_or_business='unsure')
+---
+id: in re check
+question: |
+  Does the court case have the words "**In re:**" in the name?
+subquestion: |
+  Look at the name of the case at the top of the court papers. “In re” is often used in probate, bankruptcy, and some family law cases.
+  For example, a probate case regarding Jane Doe’s estate might be called “In re: Estate of Jane Doe.”
+fields:
+  - no label: in_re_check
+    datatype: yesnoradio
+---
+id: in re label
+question: |
+  What does it say after "**In re:**" on the court papers?
+fields:
+  - "In re:": in_re_label
+    maxlength: 50
 ---
 id: address
 #generic object: ALIndividual
@@ -1122,7 +1209,7 @@ fields:
     code: |
       states_list()
     default: IL      
-  - ZIP code: users[0].address.zip    
+  - ZIP code: users[0].address.zip
 ---
 id: signer address
 #generic object: ALIndividual
@@ -1141,7 +1228,7 @@ fields:
   - State: signer[0].address.state
     code: |
       states_list()
-    default: IL      
+    default: IL
   - ZIP code: signer[0].address.zip    
 ---
 id: docket number
@@ -1159,7 +1246,7 @@ fields:
 validation code: |
   # This should be safe to 
   if dont_know_docket_number:
-    docket_number = ''      
+    docket_number = ''
 ---
 template: case_number_help
 subject: |
@@ -1172,6 +1259,37 @@ content: |
   In this example, the case number is **2022 EXAMPLE 123**.
   
   [FILE case_number_example.png, 100%, Summons form showing case number]
+---
+id: e-signature
+question: |
+  Do you want to add your e-signature to your ${ form_name }?
+subquestion: |
+  If you do not add your **{e-signature}**, you must sign your paper form before you file it.
+
+  % if filing_basis != "filing_self":
+  This program can put "/s/ ${signer[0].name.full(middle="full")}" where you would sign your name. The court will accept this as your signature.
+  % else:
+  This program can put "/s/ ${users[0].name.full(middle='full')}" where you would sign your name. The court will accept this as your signature.
+  % endif
+
+  ${ collapse_template(fee_waiver_signature_help) }
+fields:
+  - "Add e-signature?": e_signature
+    datatype: yesnoradio
+terms:
+  - "e-signature": |
+      An e-signature is an electronic signature. It is a digital version of a signature that has the same effect as a hand-written signature. 
+---
+template: fee_waiver_signature_help
+subject: |
+  **What does it mean to sign the *Fee waiver*?**
+content: |  
+  By signing your *Fee waiver*, you are certifying that:
+  
+  * Everything on the forms is true and correct, and
+  * You understand that making a false statement on the form is perjury, which can result in criminal penalties.
+
+  See the [**Code of Civil Procedure, 735 ILCS 5/1-109**](https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm), for more information.
 ---
 id: signature choice
 decoration: file-signature
@@ -1267,7 +1385,7 @@ review:
         - user_receives_benefits
     button: |
       **Receives public benefits**:
-      ${ word(yesno(user_receives_benefits)) }
+      ${ word(yesno(user_benefits.any_true())) }
   - Edit: user_applied_for_benefits
     button: |
       **Applied for public benefits**:
@@ -1912,7 +2030,9 @@ attachments:
     pdf template file: FW-CIV-Order.pdf
     editable: False
     fields:
-      - "trial_court_county": ${ trial_court.address.county }
+      - "trial_court_county": ${ trial_court.address.county.upper() }
+      - "in_re": |
+          ${ "In re: " if in_re_check == True else "" } ${ in_re_label if in_re_check == True else ""}
       - "plaintiff": ${ plaintiffs.full_names() }
       - "defendant": ${ defendants.full_names() }
       - "docket_number": ${ docket_number }
@@ -1926,6 +2046,8 @@ attachments:
     pdf template file: winnebago_supplement.pdf
     editable: False
     fields:
+      - "in_re": |
+          ${ "In re: " if in_re_check == True else "" } ${ in_re_label if in_re_check == True else ""}
       - "plaintiff": ${ plaintiffs.full_names() }
       - "defendant": ${ defendants.full_names() }
       - "docket_number": ${ docket_number }
@@ -1941,21 +2063,11 @@ attachments:
           % else:
           ${ users[0].phone_numbers() }
           % endif
-      - "signer_signature": |
-          % if signature_choice == "phone" or signature_choice == "this device": 
-          % if filing_basis != "filing_self":
-          ${ users[0].signature_if_final(i) }
-          % else:
-          ${ users[0].signature_if_final(i) }
-          % endif
-          % endif
       - "signer_signature_slash_s": |
-          % if signature_choice == "add name":
           % if filing_basis != "filing_self":
-          ${ "/s/ " + signer[0].name.full(middle="full") }
+          ${ "/s/ " + signer[0].name.full(middle="full") if e_signature else '' }
           % else:
-          ${ "/s/ " + users[0].name.full(middle="full") }
-          % endif
+          ${ "/s/ " + users[0].name.full(middle="full") if e_signature else '' }
           % endif
           
   - name: IL fee waiver petition
@@ -1965,7 +2077,9 @@ attachments:
     pdf template file: FeeWaiver_Civil_Application.pdf
     editable: False
     fields:
-      - "trial_court_county": ${ trial_court.address.county }
+      - "trial_court_county": ${ trial_court.address.county.upper() }
+      - "in_re": |
+          ${ "In re: " if in_re_check == True else "" } ${ in_re_label if in_re_check == True else ""}
       - "plaintiff": ${ plaintiffs.full_names() }
       - "defendant": ${ defendants.full_names() }
       - "docket_number": ${ docket_number }
@@ -1981,23 +2095,11 @@ attachments:
       - "user_birthdate": ${ users[0].birth_year }
       - "user_address_line_one": ${ users[0].address.line_one(bare=True) }
       - "user_address_city_state_zip": ${ users[0].address.line_two() }
-      - "signer_signature": |
-          % if signature_choice == "phone" or signature_choice == "this device": 
-          ${ users[0].signature_if_final(i) }
-          % endif
-          # removed this duplicative logic since variable is the same in either 
-          #% if filing_basis != "filing_self":
-          #${ users[0].signature_if_final(i) }
-          #% else:
-          #${ users[0].signature_if_final(i) }
-          #% endif
-      - "signer_signature_slash_s": |
-          % if signature_choice == "add name":
+      - "signer_signature_no_slash": |
           % if filing_basis != "filing_self":
-          ${ signer[0].name.full(middle="full") }
+          ${ signer[0].name.full(middle="full") if e_signature else '' }
           % else:
-          ${ users[0].name.full(middle="full") }
-          % endif
+          ${ users[0].name.full(middle="full") if e_signature else '' }
           % endif
       - "signer_email": |
           % if filing_basis != "filing_self":

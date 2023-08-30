@@ -1,20 +1,10 @@
 metadata:
-  title: |
-    Fee waiver
-  short title: |
-    Fee waiver
-  tags:
-    - BE-00-00-00-00
-    - BE-04-00-00-00
-    - ED-00-00-00-00
-    - ES-00-00-00-00
-    - FA-00-00-00-00
-    - FA-07-00-00-00
-    - HE-00-00-00-00
-    - HO-00-00-00-00
-    - IM-00-00-00-00
-    - MO-00-00-00-00
-    - RI-10-00-00-00
+  title: Fee waiver
+  short title: Fee waiver
+  authors:
+    - Quinten Steenhuis
+    - Matt Newsted
+    - Brycew Willey
 ---
 include:
   - IL_fee_waiver_body.yml
@@ -25,51 +15,61 @@ code: |
 mandatory: True
 code: |
     ilao_easy_form_url = "https://www.illinoislegalaid.org/legal-information/fee-waiver"
-    ilao_easy_form_title = "Fee Waiver"
+    ilao_easy_form_title = "Fee waiver"
 ---
 code: |
   github_repo_name = "docassemble-IlFeeWaiver"
+  github_user = "SuffolkLITLab"
 ---
 code: |
   allowed_courts = ['Circuit']
 ---
 code: |
   interview_short_title = "Fee Waiver"
-  form_name = "fee waiver"
+  form_name = "Fee waiver"
 ---
 code: |
   al_form_type = 'existing_case'
 ---
+code: |
+  fee_waiver_is_standalone = True
+---
 sections:
-  - review_IL_fee_waiver: Review your answers
+  - section_intro: Start
+  - section_income: Income
+  - section_expenses: Expenses
+  - section_assets: Assets
+  - section_case_info: Court case info
+  - section_about_you: Details about person asking for a fee waiver
+  - section_download: Download
 ---
 ###################### Main order ######################
 comment: |
   This block includes the logic for standalone interviews.
 mandatory: True
 code: |
+  nav.set_section('section_intro')
   sees_nav_bar
   #IL_fee_waiver_intro
-  instructions
+  set_progress(5)
+  how_to_use
+  accept_terms
   whats_next
-  if accept == False:
-    not_legal_advice
+  set_progress(10)
+
   # Not going to allow e-filing from Fee Waiver standalone for now.
   user_wants_efile = False
-
   interview_order_IL_fee_waiver
-  signature_date
+
+  nav.set_section('section_about_you')
+  set_progress(90)
+  e_signature
   # Save anonymized interview statistics (customize the saved data below)
   store_variables_snapshot(data={'zip': users[0].address.zip})
-  # IL_fee_waiver_preview_question
-  basic_questions_signature_flow
-  # users[0].signature
-  #IL_fee_waiver_download
+
+  set_progress(100)
+  nav.set_section('section_download')
   get_docs_screen
-  #users[0].delivery_email
-  #if email_sent_ok == True:
-  #  ending_screen
-  #ending_screen
 ---
 id: welcome
 question: |
@@ -94,7 +94,7 @@ subquestion: |
   * If  you  don’t  get  public  benefits,  you  may  want  to  bring  documents  showing  your  income,  value  of  belongings  (including  real  estate)  and  expense  information  when  you  file your forms.
 ---
 id: instructions
-continue button field: instructions
+continue button field: how_to_use
 question: |
   Instructions
 subquestion: |
@@ -110,12 +110,17 @@ subquestion: |
 
   You will also need to know information about the court case for which you are requesting a fee waiver. You can find this information on other court papers you have about this case. 
 
-  Set aside :stopwatch: 10 to 15 minutes to finish this program. You can login and save your work to return to later. 
+  Set aside 10 to 15 minutes to finish this program. You can login and save your work to return to later. 
 
-  Click on **{green words :question-circle:}** to learn what they mean. Click **Help** to learn more about a question.
-help: |
-  This is an example help page. Click **Back to question** to go to the previous screen and continue the interview.
+  ${ collapse_template(help_example) }
+
+  Click on **{green words}** to learn what they mean. Some questions have a question mark in a circle ${ fa_icon("question-circle", color_css="#0dcaf0" ) } that also gives help.
 ---
+template: help_example
+subject: |
+  **You can expand sections like this to show more information.**
+content: |
+  This is an example of help. Click again to hide.
 ---
 id: whats next
 continue button field: whats_next
@@ -123,32 +128,11 @@ question: |
   After you finish this program
 subquestion: |
   After you download your ${ form_name }, you must file it with the court. This program does not file your ${ form_name } for you.
+
+  **Note:** You can file your ${ form_name } at any time during your court case. It is usually done when a person files their first forms in a case.
+  That way they might have all of the court fees in a case waived.
   
-  Read the *How to Ask the Judge to Participate in a Court Case for Free or at a Reduced Cost* instructions you can download at the end of this program. 
----
-id: accept terms
-question: |
-  Not legal advice
-subquestion: |
-  NOTE: This program does not provide legal advice. It does not take the place of advice from a lawyer.
-  Using this program does not create an attorney-client relationship between you and Illinois Legal Aid Online or its employees.
-  Do you understand and accept the [terms of use](https://www.illinoislegalaid.org/about/terms-of-use)? 
-field: accept
-choices:
-  - I understand and accept the terms of use.: True
-  - I do not accept the terms of use.: False
----
-id: not legal advice
-event: not_legal_advice
-question: |
-  Sorry
-subquestion: |
-  You cannot continue unless you understand this program does not give legal advice and accept the [terms of use](https://www.illinoislegalaid.org/about/terms-of-use).
-  This program will only help you complete the legal documents you want. By providing this program we are not giving you legal advice. Your use of this program does not mean that Illinois Legal Aid Online will provide you with a lawyer or with any individual legal help.
-  If you have questions or concerns about your legal problem and want legal advice you should talk to a lawyer. If you would like help finding free or low-cost legal services in your area, use [Get Legal Help](https://www.illinoislegalaid.org/get-legal-help).
-buttons:
-  - Exit: exit
-  - Restart: restart
+  Read the "How to Ask the Judge to Participate in a Court Case for Free or at a Reduced Cost" instructions you can download at the end of this program. 
 ---
 id: download IL_fee_waiver
 event: IL_fee_waiver_download
@@ -272,5 +256,5 @@ under: |
   ${ action_button_html(interview_url(i="docassemble.ILAOEfile:feedback.yml", easy_form_interview=ilao_easy_form_url, easy_form_title=ilao_easy_form_title, easy_form_page=user_info().question_id, easy_form_variable=user_info().variable, local=False,reset=1), label=':comment: Was this program helpful?', color='info', size="md", new_window=True) }
 ---
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_Post_interview_instructions, IL_fee_waiver_full_for_user, IL_fee_waiver_order], filename="IL_fee_waiver_user_package.pdf", title="Download all forms")
+  - al_user_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_Post_interview_instructions, IL_fee_waiver_full_for_user, IL_fee_waiver_order], filename="IL_fee_waiver_user_package.pdf", title="All forms")
   - al_court_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_full_for_court, IL_fee_waiver_attachment, IL_fee_waiver_order], filename="IL_fee_waiver_court_package.pdf", title="Download all forms")
