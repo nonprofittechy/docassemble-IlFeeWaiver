@@ -1772,24 +1772,11 @@ review:
       % else:
       ${ users[0].email }      
       % endif
-  - Edit: 
-    - signature_choice
-    - recompute:
-          - basic_questions_signature_flow
+  - Edit: e_signature
     button: |
-      **Signature choice**:
-      % if (signature_choice == "phone") or (signature_choice == "this device"):
-      ${ signature_choice.capitalize() }      
-      % elif signature_choice == "add name":
-      % if filing_basis == "filing_self":
-      ${ "Add /s/ " + users[0].name.full(middle="full") }
-      % else:
-      ${ "Add /s/ " + signer[0].name.full(middle="full") }
-      % endif
-      % elif signature_choice == "no signature":
-      ${ "Leave blank and sign later" }
-      % endif
-      
+      **Do you want to add your e-signature?**
+      ${ word(yesno(e_signature)) }
+    show if: defined('can_check_efile') and not can_check_efile
 #  - Edit: users[0].signature
 #    label: Edit
 #    fields:
