@@ -34,8 +34,8 @@ code: |
   allowed_courts = ['Circuit']
 ---
 code: |
-  interview_short_title = "Fee Waiver"
-  form_name = "fee waiver"
+  interview_short_title = "Fee waiver"
+  form_name = "Fee waiver"
 ---
 code: |
   al_form_type = 'existing_case'
