@@ -96,11 +96,21 @@ code: |
     user_applied_for_benefits
     user_has_dependents
     set_progress(11.11)
-    user_income_none
-    user_annual_none
-    user_expense_none
+    if not user_income_none:
+      if user_income_other:
+        user_income_other_list.gather()
+    if not user_annual_none:
+      if user_annual_other:
+        user_annual_other_list.gather()
+    if not user_expense_none:
+      if user_expense_other:
+        user_expense_other_list.gather()
     set_progress(22.22)
     ask_user_assets
+    if not user_asset_none:
+      if user_asset_other:
+        user_asset_other_list.gather()
+  
     # If something went wrong obtaining income limit, just skip this screen
     # The error will get logged.
     if not poverty_scale_get_income_limit(household_size=household_size, multiplier=1.25) is None:
