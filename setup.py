@@ -44,9 +44,9 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.IlFeeWaiver',
-      version='2.0.4',
+      version='2.0.7',
       description=('Fee waiver'),
-      long_description='# docassemble.IlFeeWaiver\r\n\r\nApplication for Fee Waiver\r\n\r\n## Author\r\n\r\nQuinten Steenhuis / Matt Newsted\r\n\r\nqsteenhuis@suffolk.edu, mnewsted@illinoislegalaid.org\r\n\r\n',
+      long_description='> [!NOTE]  \r\n> This is a duplicate of [IllinoisLegalAidOnline/docassemble-FeeWaiver](https://github.com/IllinoisLegalAidOnline/docassemble-FeeWaiver), and it appeared to be significantly out of date when archived.\r\n\r\n# docassemble.IlFeeWaiver\r\n\r\nApplication for Fee Waiver\r\n\r\n## Author\r\n\r\nQuinten Steenhuis / Matt Newsted\r\n\r\nqsteenhuis@suffolk.edu, mnewsted@illinoislegalaid.org\r\n\r\n',
       long_description_content_type='text/markdown',
       author='Quinten Steenhuis / Matt Newsted',
       author_email='qsteenhuis@suffolk.edu mnewsted@illinoislegalaid.org',
@@ -54,7 +54,7 @@ setup(name='docassemble.IlFeeWaiver',
       url='http://www.illinoislegalaid.org',
       packages=find_packages(),
       namespace_packages=['docassemble'],
-      install_requires=['docassemble.AssemblyLine>=2.21.0', 'docassemble.EFSPIntegration>=1.0.0rc2', 'docassemble.PovertyScale>=2022.9.29'],
+      install_requires=['docassemble.AssemblyLine>=3.1.0', 'docassemble.EFSPIntegration>=1.5.0', 'docassemble.PovertyScale>=2024.0.0'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/IlFeeWaiver/', package='docassemble.IlFeeWaiver'),
      )
