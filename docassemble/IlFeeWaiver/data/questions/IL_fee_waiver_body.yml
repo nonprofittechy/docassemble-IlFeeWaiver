@@ -544,8 +544,9 @@ subquestion: |
   last month as a starting point. Look it over carefully and make
   any corrections that you need.
   
-  Enter the actual amount received **over the last 12 months** for each kind
-  of income. List the amount of income you received before taxes.
+  **Note:** We used the information you gave us about income from
+  last month and multiplied it by 12 as a starting point. Look it over carefully
+  and make any corrections you need.
 
 fields:
   - label: |
@@ -1248,6 +1249,8 @@ fields:
     show if: 
       variable: filing_basis
       is: filing_on_behalf_of
+    help: |
+      If you are an attorney licensed in Illinois, you can enter your number if filing on behalf of another person. Some jurisdictions like Cook or DuPage County require a firm or an individual attorney number.
 #  - How are you related to the filer?: relationship_to_minor
 #    maxlength: 33
 #    show if: 
