@@ -261,9 +261,13 @@ fields:
   - no label: user_applied_for_benefits
     datatype: yesnoradio
 ---
+depends on:
+  - user_benefits
 code: |
   user_receives_benefits = user_benefits.any_true()
 ---
+depends on:
+  - user_applied_for_benefits
 code: |
   user_has_applied_for_benefits = user_applied_for_benefits.any_true()
 ---
@@ -725,9 +729,9 @@ code: |
 id: What expenses do you have right now
 question: |
   % if filing_basis == "filing_self":
-  What expenses do you have right now?
+  What monthly expenses do you have right now?
   % else:
-  What expenses does ${ users[0].familiar() } have right now?
+  What monthly expenses does ${ users[0].familiar() } have right now?
   % endif
 subquestion: |
   Enter the amount that each expense costs **per month**.
@@ -1688,7 +1692,7 @@ review:
         - user_receives_benefits
     button: |
       **Receives public benefits**:
-      ${ word(yesno(user_receives_benefits)) }
+      ${ word(yesno(user_benefits.any_true())) }
   - Edit: user_applied_for_benefits
     button: |
       **Applied for public benefits**:

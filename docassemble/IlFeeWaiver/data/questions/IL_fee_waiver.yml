@@ -13,10 +13,11 @@ code: |
 mandatory: True
 code: |
     ilao_easy_form_url = "https://www.illinoislegalaid.org/legal-information/fee-waiver"
-    ilao_easy_form_title = "Fee Waiver"
+    ilao_easy_form_title = "Fee waiver"
 ---
 code: |
   github_repo_name = "docassemble-IlFeeWaiver"
+  github_user = 'IllinoisLegalAidOnline'  
 ---
 code: |
   allowed_courts = ['Circuit']
@@ -40,8 +41,6 @@ code: |
   #IL_fee_waiver_intro
   instructions
   whats_next
-  if accept == False:
-    not_legal_advice
   # Not going to allow e-filing from Fee Waiver standalone for now.
   user_wants_efile = False
 
@@ -260,5 +259,5 @@ under: |
   ${ action_button_html(interview_url(i="docassemble.ILAOEfile:feedback.yml", easy_form_interview=ilao_easy_form_url, easy_form_title=ilao_easy_form_title, easy_form_page=current_context().question_id, easy_form_variable=current_context().variable, local=False,reset=1), label=':comment: Was this program helpful?', color='info', size="md", new_window=True) }
 ---
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_Post_interview_instructions, IL_fee_waiver_full_for_user, IL_fee_waiver_order], filename="IL_fee_waiver_user_package.pdf", title="Download all forms")
-  - al_court_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_full_for_court, IL_fee_waiver_attachment, IL_fee_waiver_order], filename="IL_fee_waiver_court_package.pdf", title="Download all forms")
+  - al_user_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_Post_interview_instructions, IL_fee_waiver_full_for_user, IL_fee_waiver_order], filename="IL_fee_waiver_user_package.pdf", title="All forms")
+  - al_court_bundle: ALDocumentBundle.using(elements=[IL_fee_waiver_full_for_court, IL_fee_waiver_attachment, IL_fee_waiver_order], filename="IL_fee_waiver_court_package.pdf", title="All forms")
